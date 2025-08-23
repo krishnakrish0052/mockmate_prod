@@ -8,7 +8,7 @@ export const useAdminApi = () => {
 
   // Create an axios instance specifically for admin API calls
   const adminApi = axios.create({
-    // Don't set baseURL since Vite proxy handles /api routing
+    baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api',
   });
 
   // Configure request interceptor to add authentication
@@ -35,7 +35,7 @@ export const useAdminApi = () => {
         try {
           const refreshToken = localStorage.getItem('admin_refresh_token');
           if (refreshToken) {
-            const refreshResponse = await axios.post('/api/admin/refresh', {
+            const refreshResponse = await adminApi.post('/admin/refresh', {
               refreshToken: refreshToken,
             });
 
@@ -78,7 +78,7 @@ export const useAdminApi = () => {
 
       const response = await adminApi({
         method,
-        url: `/api/admin/${endpoint}`,
+        url: `/admin/${endpoint}`,
         data,
       });
 
