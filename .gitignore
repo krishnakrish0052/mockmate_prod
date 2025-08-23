@@ -79,4 +79,6 @@ webhook-diagnostic-complete.js
 # SQL dumps and backups
 *.sql.bak
 *.dump
+*.sql
+mockmate-production-backup-*.sql
 export-database.ps1
