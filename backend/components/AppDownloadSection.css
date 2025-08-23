@@ -1,0 +1,505 @@
+/* App Download Section Styles */
+
+.app-download-section {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+/* Header */
+.download-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.download-header h2 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 1rem;
+}
+
+.download-header p {
+  font-size: 1.2rem;
+  color: #6b7280;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* Loading and Error States */
+.download-loading, .download-error {
+  text-align: center;
+  padding: 4rem 2rem;
+}
+
+.loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid #e5e7eb;
+  border-top: 4px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.download-error h3 {
+  color: #dc2626;
+  margin-bottom: 1rem;
+}
+
+.retry-button {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background-color 0.2s;
+}
+
+.retry-button:hover {
+  background: #2563eb;
+}
+
+/* Platform Selection */
+.platform-selection {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 3rem;
+  flex-wrap: wrap;
+}
+
+.platform-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.5rem 2rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 1rem;
+  background: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  min-width: 120px;
+}
+
+.platform-btn:hover {
+  border-color: #3b82f6;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(59, 130, 246, 0.1);
+}
+
+.platform-btn.active {
+  border-color: #3b82f6;
+  background: #eff6ff;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(59, 130, 246, 0.15);
+}
+
+.platform-btn.detected::after {
+  content: '';
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 16px;
+  height: 16px;
+  background: #10b981;
+  border-radius: 50%;
+  border: 2px solid white;
+}
+
+.platform-icon {
+  font-size: 2rem;
+}
+
+.platform-name {
+  font-weight: 600;
+  color: #374151;
+}
+
+.detected-badge {
+  font-size: 0.75rem;
+  background: #10b981;
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 1rem;
+  position: absolute;
+  top: -0.5rem;
+  right: -0.5rem;
+}
+
+/* Version Cards */
+.platform-downloads {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 4rem;
+}
+
+.version-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 1rem;
+  background: white;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.version-card:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 10px 25px rgba(59, 130, 246, 0.1);
+}
+
+.version-card.latest {
+  border-color: #10b981;
+  background: linear-gradient(135deg, #ecfdf5 0%, #ffffff 100%);
+}
+
+.version-card.beta {
+  border-color: #f59e0b;
+  background: linear-gradient(135deg, #fffbeb 0%, #ffffff 100%);
+}
+
+.version-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 1.5rem;
+  gap: 1rem;
+}
+
+.version-info h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 0.5rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.latest-badge {
+  font-size: 0.75rem;
+  background: #10b981;
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 1rem;
+}
+
+.beta-badge {
+  font-size: 0.75rem;
+  background: #f59e0b;
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 1rem;
+}
+
+.version-meta {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.875rem;
+  color: #6b7280;
+  flex-wrap: wrap;
+}
+
+.version-meta span {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.download-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.download-btn.primary {
+  background: #3b82f6;
+  color: white;
+}
+
+.download-btn.primary:hover {
+  background: #2563eb;
+  transform: translateY(-1px);
+}
+
+.version-description {
+  padding: 0 1.5rem 1rem;
+}
+
+.version-description p {
+  color: #4b5563;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.system-requirements {
+  padding: 0 1.5rem 1rem;
+}
+
+.system-requirements small {
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.version-details {
+  margin: 1rem 1.5rem 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.version-details summary {
+  padding: 0.75rem 1rem;
+  background: #f9fafb;
+  cursor: pointer;
+  font-weight: 500;
+  color: #374151;
+}
+
+.version-details summary:hover {
+  background: #f3f4f6;
+}
+
+.changelog, .release-notes {
+  padding: 1rem;
+  background: white;
+}
+
+.changelog pre {
+  white-space: pre-wrap;
+  font-family: inherit;
+  margin: 0;
+  color: #4b5563;
+  line-height: 1.6;
+}
+
+.version-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+/* Features Section */
+.desktop-features {
+  margin: 4rem 0;
+  text-align: center;
+}
+
+.desktop-features h3 {
+  font-size: 2rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 2rem;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.feature-item {
+  padding: 2rem;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 1rem;
+  transition: all 0.3s ease;
+}
+
+.feature-item:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.feature-icon {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 1rem;
+}
+
+.feature-item h4 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 0.5rem;
+}
+
+.feature-item p {
+  color: #6b7280;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* System Requirements Section */
+.system-requirements-section {
+  margin: 4rem 0;
+}
+
+.system-requirements-section h3 {
+  font-size: 2rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.requirements-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+}
+
+.requirement-item {
+  padding: 2rem;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 1rem;
+}
+
+.requirement-item h4 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 1rem;
+}
+
+.requirement-item ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.requirement-item li {
+  padding: 0.5rem 0;
+  color: #4b5563;
+  position: relative;
+  padding-left: 1.5rem;
+}
+
+.requirement-item li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: #10b981;
+  font-weight: bold;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .app-download-section {
+    padding: 1rem;
+  }
+
+  .download-header h2 {
+    font-size: 2rem;
+  }
+
+  .platform-selection {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .platform-btn {
+    width: 100%;
+    max-width: 300px;
+  }
+
+  .version-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .download-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .features-grid, .requirements-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .version-meta {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .app-download-section {
+    background: #111827;
+    color: #f9fafb;
+  }
+
+  .download-header h2 {
+    color: #f9fafb;
+  }
+
+  .download-header p {
+    color: #9ca3af;
+  }
+
+  .platform-btn {
+    background: #1f2937;
+    border-color: #374151;
+    color: #f9fafb;
+  }
+
+  .platform-btn:hover,
+  .platform-btn.active {
+    background: #374151;
+  }
+
+  .version-card {
+    background: #1f2937;
+    border-color: #374151;
+  }
+
+  .version-card.latest {
+    background: linear-gradient(135deg, #064e3b 0%, #1f2937 100%);
+  }
+
+  .version-card.beta {
+    background: linear-gradient(135deg, #78350f 0%, #1f2937 100%);
+  }
+
+  .feature-item,
+  .requirement-item {
+    background: #1f2937;
+    border-color: #374151;
+  }
+
+  .version-details {
+    border-color: #374151;
+  }
+
+  .version-details summary {
+    background: #374151;
+    color: #f9fafb;
+  }
+
+  .version-footer {
+    background: #374151;
+    border-color: #4b5563;
+  }
+}

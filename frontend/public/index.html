@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <link rel="icon" href="%PUBLIC_URL%/mockmate_32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="%PUBLIC_URL%/mockmate_16x16.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="%PUBLIC_URL%/mockmate_32x32.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#3b82f6" />
+    <meta
+      name="description"
+      content="MockMate - AI-powered Interview Platform. Practice interviews with AI feedback and analysis."
+    />
+    <meta name="keywords" content="interview, AI, practice, feedback, analysis, MockMate, job interview, career" />
+    <meta name="author" content="MockMate Team" />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/mockmate_128x128.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="%PUBLIC_URL%/mockmate_128x128.png" />
+    <!--
+      manifest.json provides metadata used when your web app is installed on a
+      user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
+    -->
+    <link rel="manifest" href="http://localhost:5000/api/config/manifest" />
+    <!--
+      Dynamic icon loading support - these can be overridden by admin configuration
+    -->
+    <!-- Stripe.js for payment processing - Direct CDN loading -->
+    <script>
+      // Load Stripe.js from CDN with aggressive retry and timeout handling
+      (function loadStripe() {
+        if (window.Stripe) {
+          console.log('✅ Stripe.js already available');
+          return;
+        }
+        
+        let loadAttempts = 0;
+        const maxAttempts = 3;
+        
+        function attemptLoad() {
+          loadAttempts++;
+          
+          console.log(`🔄 Loading Stripe.js from CDN (attempt ${loadAttempts}/${maxAttempts})...`);
+          
+          const script = document.createElement('script');
+          script.src = 'https://js.stripe.com/v3/';
+          script.async = true;
+          
+          // Set a timeout to detect loading issues
+          const timeoutId = setTimeout(() => {
+            console.error(`⏰ Stripe.js loading timeout on attempt ${loadAttempts}`);
+            script.remove();
+            
+            if (loadAttempts < maxAttempts) {
+              console.log('🔄 Retrying in 2 seconds...');
+              setTimeout(attemptLoad, 2000);
+            } else {
+              console.error('❌ Stripe.js loading failed after all attempts');
+              window.stripeLoadError = true;
+            }
+          }, 10000); // 10 second timeout per attempt
+          
+          script.onload = function() {
+            clearTimeout(timeoutId);
+            console.log(`✅ Stripe.js loaded successfully on attempt ${loadAttempts}`);
+            window.stripeLoadedAt = Date.now();
+            
+            // Double-check that Stripe constructor is actually available
+            if (window.Stripe && typeof window.Stripe === 'function') {
+              console.log('✅ Stripe constructor verified and ready');
+            } else {
+              console.error('❌ Stripe loaded but constructor not available');
+              window.stripeLoadError = true;
+            }
+          };
+          
+          script.onerror = function() {
+            clearTimeout(timeoutId);
+            console.error(`❌ Failed to load Stripe.js on attempt ${loadAttempts}`);
+            
+            if (loadAttempts < maxAttempts) {
+              console.log('🔄 Retrying in 2 seconds...');
+              setTimeout(attemptLoad, 2000);
+            } else {
+              console.error('❌ Stripe.js loading failed after all attempts');
+              window.stripeLoadError = true;
+            }
+          };
+          
+          document.head.appendChild(script);
+        }
+        
+        // Start loading immediately
+        attemptLoad();
+      })();
+    </script>
+    
+    <script>
+      // Dynamic favicon loading function
+      function loadDynamicFavicon() {
+        fetch('http://localhost:5000/api/config/icons')
+          .then(response => response.json())
+          .then(data => {
+            if (data.success && data.favicon) {
+              const link = document.querySelector("link[rel~='icon']") || document.createElement('link');
+              link.rel = 'icon';
+              link.href = data.favicon;
+              document.getElementsByTagName('head')[0].appendChild(link);
+            }
+            if (data.success && data.title) {
+              document.title = data.title;
+            }
+          })
+          .catch(err => console.log('Using default favicon'));
+      }
+      
+      // Enhanced Stripe.js loading with retry
+      function ensureStripeLoaded() {
+        if (window.Stripe) {
+          console.log('✅ Stripe.js already loaded');
+          return;
+        }
+        
+        // Try to load Stripe.js dynamically if it didn't load from the script tag
+        const script = document.createElement('script');
+        script.src = 'https://js.stripe.com/v3/';
+        script.async = true;
+        script.onload = function() {
+          console.log('✅ Stripe.js loaded dynamically');
+        };
+        script.onerror = function() {
+          console.error('❌ Failed to load Stripe.js dynamically');
+        };
+        document.head.appendChild(script);
+      }
+      
+      // Load dynamic favicon and ensure Stripe when DOM is ready
+      document.addEventListener('DOMContentLoaded', function() {
+        loadDynamicFavicon();
+        
+        // Check Stripe loading
+        setTimeout(function() {
+          if (window.Stripe) {
+            console.log('✅ Stripe.js loaded successfully');
+          } else {
+            console.warn('⚠️ Stripe.js not loaded, attempting dynamic load...');
+            ensureStripeLoaded();
+          }
+        }, 1000); // Wait 1 second for script to load
+      });
+    </script>
+    <title>MockMate - AI-powered Interview Platform</title>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+    <!--
+      This HTML file is a template.
+      If you open it directly in the browser, you will see an empty page.
+
+      You can add webfonts, meta tags, or analytics to this file.
+      The build step will place the bundled scripts into the <body> tag.
+
+      To begin the development, run `npm start` or `yarn start`.
+      To create a production bundle, use `npm run build` or `yarn build`.
+    -->
+  </body>
+</html>

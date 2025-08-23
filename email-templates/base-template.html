@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en" style="background-color: #0a0a0a;">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{EMAIL_TITLE}} - MockMate</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', 'JetBrains Mono', 'Fira Code', Consolas, Monaco, monospace;
+            background-color: #0a0a0a;
+            color: #ffffff;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: linear-gradient(135deg, #0a0a0a, #1a1a1a);
+            border: 1px solid #333333;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.1);
+        }
+        
+        .cli-header {
+            background: linear-gradient(90deg, #1a1a1a, #333333);
+            border-bottom: 1px solid #ffbf00;
+            border-radius: 8px 8px 0 0;
+            padding: 20px;
+            position: relative;
+        }
+        
+        .cli-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(transparent 50%, rgba(0, 255, 0, 0.02) 50%, rgba(0, 255, 0, 0.02) 52%, transparent 52%);
+            background-size: 100% 4px;
+            pointer-events: none;
+            border-radius: 8px 8px 0 0;
+        }
+        
+        .cli-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .cli-dots {
+            display: flex;
+            gap: 6px;
+        }
+        
+        .cli-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        
+        .cli-dot.red { background-color: #ff5f56; }
+        .cli-dot.yellow { background-color: #ffbd2e; }
+        .cli-dot.green { background-color: #27ca3f; }
+        
+        .terminal-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            color: #ffd700;
+            margin-left: 15px;
+        }
+        
+        .cli-path {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: #00ff00;
+            opacity: 0.8;
+        }
+        
+        .email-content {
+            padding: 30px 25px;
+            position: relative;
+        }
+        
+        .terminal-prompt {
+            font-family: 'JetBrains Mono', monospace;
+            color: #00ff00;
+            font-weight: 700;
+            margin-right: 8px;
+        }
+        
+        .terminal-prompt::before {
+            content: '$ ';
+        }
+        
+        .cli-text {
+            font-family: 'JetBrains Mono', monospace;
+            color: #ffffff;
+            line-height: 1.4;
+        }
+        
+        .cli-command {
+            background: rgba(255, 215, 0, 0.1);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            border-radius: 4px;
+            padding: 12px 15px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            color: #ffd700;
+            margin: 15px 0;
+            position: relative;
+        }
+        
+        .cli-command::before {
+            content: '> ';
+            color: #00ff00;
+            font-weight: 700;
+        }
+        
+        .cli-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #ffd700, #ffbf00);
+            color: #0a0a0a;
+            padding: 12px 24px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 14px;
+            border: 1px solid #ffd700;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .cli-button:hover {
+            background: linear-gradient(135deg, #ffbf00, #e6a600);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+            transform: translateY(-1px);
+        }
+        
+        .cli-info-box {
+            background: rgba(0, 255, 255, 0.05);
+            border-left: 4px solid #00ffff;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 6px 6px 0;
+        }
+        
+        .cli-warning-box {
+            background: rgba(255, 191, 0, 0.05);
+            border-left: 4px solid #ffbf00;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 6px 6px 0;
+        }
+        
+        .cli-error-box {
+            background: rgba(239, 68, 68, 0.05);
+            border-left: 4px solid #ef4444;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 6px 6px 0;
+        }
+        
+        .cli-success-box {
+            background: rgba(0, 255, 0, 0.05);
+            border-left: 4px solid #00ff00;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 6px 6px 0;
+        }
+        
+        .cli-divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #333333, transparent);
+            margin: 25px 0;
+        }
+        
+        .cli-footer {
+            background: #1a1a1a;
+            border-top: 1px solid #333333;
+            border-radius: 0 0 8px 8px;
+            padding: 20px 25px;
+            font-size: 12px;
+            color: #666666;
+        }
+        
+        .cli-footer a {
+            color: #ffd700;
+            text-decoration: none;
+        }
+        
+        .cli-footer a:hover {
+            color: #ffbf00;
+            text-decoration: underline;
+        }
+        
+        .cli-logo {
+            display: inline-block;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            font-size: 16px;
+            color: #ffd700;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+        
+        .typing-cursor {
+            display: inline-block;
+            width: 2px;
+            height: 20px;
+            background-color: #ffd700;
+            margin-left: 2px;
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+        
+        .cli-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+        }
+        
+        .cli-table th {
+            background: rgba(255, 215, 0, 0.1);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            padding: 10px 12px;
+            text-align: left;
+            color: #ffd700;
+            font-weight: 600;
+        }
+        
+        .cli-table td {
+            border: 1px solid #333333;
+            padding: 8px 12px;
+            color: #ffffff;
+        }
+        
+        .cli-table tr:hover {
+            background: rgba(255, 215, 0, 0.05);
+        }
+        
+        .cli-highlight {
+            color: #ffd700;
+            font-weight: 600;
+        }
+        
+        .cli-muted {
+            color: #666666;
+            font-size: 12px;
+        }
+        
+        .cli-code {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid #333333;
+            border-radius: 3px;
+            padding: 2px 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            color: #00ffff;
+        }
+        
+        /* Responsive styles */
+        @media only screen and (max-width: 600px) {
+            .email-container {
+                margin: 10px;
+                border-radius: 6px;
+            }
+            
+            .email-content {
+                padding: 20px 15px;
+            }
+            
+            .cli-button {
+                display: block;
+                text-align: center;
+                margin: 15px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <!-- Header -->
+        <div class="cli-header">
+            <div class="cli-title">
+                <div class="cli-dots">
+                    <div class="cli-dot red"></div>
+                    <div class="cli-dot yellow"></div>
+                    <div class="cli-dot green"></div>
+                </div>
+                <div class="terminal-title">MockMate Terminal</div>
+            </div>
+            <div class="cli-path">~/mockmate/{{EMAIL_TYPE}}</div>
+        </div>
+        
+        <!-- Content -->
+        <div class="email-content">
+            {{EMAIL_CONTENT}}
+        </div>
+        
+        <!-- Footer -->
+        <div class="cli-footer">
+            <div style="text-align: center;">
+                <div class="cli-logo">MockMate</div>
+                <div style="margin-top: 10px;">
+                    <p>AI-Powered Interview Platform</p>
+                    <p style="margin-top: 5px;">
+                        <a href="{{UNSUBSCRIBE_URL}}">Unsubscribe</a> | 
+                        <a href="{{SUPPORT_URL}}">Support</a> | 
+                        <a href="{{WEBSITE_URL}}">Website</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

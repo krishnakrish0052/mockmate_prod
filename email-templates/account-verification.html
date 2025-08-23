@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en" style="background-color: #0a0a0a;">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Your Account - MockMate</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', 'JetBrains Mono', Consolas, Monaco, monospace;
+            background-color: #0a0a0a;
+            color: #ffffff;
+            line-height: 1.6;
+        }
+        
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: linear-gradient(135deg, #0a0a0a, #1a1a1a);
+            border: 1px solid #333333;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.1);
+        }
+        
+        .cli-header {
+            background: linear-gradient(90deg, #1a1a1a, #333333);
+            border-bottom: 1px solid #ffbf00;
+            border-radius: 8px 8px 0 0;
+            padding: 20px;
+        }
+        
+        .terminal-title { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #ffd700; }
+        .cli-path { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #00ff00; opacity: 0.8; }
+        
+        .email-content { padding: 30px 25px; }
+        
+        .terminal-prompt { font-family: 'JetBrains Mono', monospace; color: #00ff00; font-weight: 700; margin-right: 8px; }
+        .terminal-prompt::before { content: '$ '; }
+        
+        .cli-text { font-family: 'JetBrains Mono', monospace; color: #ffffff; line-height: 1.4; }
+        
+        .cli-command {
+            background: rgba(255, 215, 0, 0.1);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            border-radius: 4px;
+            padding: 12px 15px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            color: #ffd700;
+            margin: 15px 0;
+        }
+        .cli-command::before { content: '> '; color: #00ff00; font-weight: 700; }
+        
+        .cli-button {
+            display: block;
+            background: linear-gradient(135deg, #ffd700, #ffbf00);
+            color: #0a0a0a;
+            padding: 15px 30px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-family: 'Inter', sans-serif;
+            font-weight: 700;
+            font-size: 16px;
+            text-align: center;
+            margin: 25px 0;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+        }
+        
+        .cli-success-box {
+            background: rgba(0, 255, 0, 0.05);
+            border-left: 4px solid #00ff00;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 6px 6px 0;
+        }
+        
+        .cli-warning-box {
+            background: rgba(255, 191, 0, 0.05);
+            border-left: 4px solid #ffbf00;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 6px 6px 0;
+        }
+        
+        .cli-highlight { color: #ffd700; font-weight: 600; }
+        
+        .verification-code {
+            background: rgba(0, 0, 0, 0.4);
+            border: 2px solid #00ff00;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 25px 0;
+            text-align: center;
+        }
+        
+        .code-display {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 28px;
+            font-weight: 700;
+            color: #00ff00;
+            letter-spacing: 8px;
+            margin: 15px 0;
+        }
+        
+        .ascii-check {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            color: #00ff00;
+            text-align: center;
+            margin: 20px 0;
+            white-space: pre-line;
+        }
+        
+        .cli-footer {
+            background: #1a1a1a;
+            border-top: 1px solid #333333;
+            border-radius: 0 0 8px 8px;
+            padding: 20px 25px;
+            font-size: 12px;
+            color: #666666;
+            text-align: center;
+        }
+        
+        .cli-logo { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #ffd700; }
+        
+        @media only screen and (max-width: 600px) {
+            .email-container { margin: 10px; }
+            .email-content { padding: 20px 15px; }
+            .code-display { font-size: 24px; letter-spacing: 4px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="cli-header">
+            <div class="terminal-title">MockMate Terminal</div>
+            <div class="cli-path">~/mockmate/verification</div>
+        </div>
+        
+        <div class="email-content">
+            <div class="ascii-check">
+✓ ACCOUNT VERIFICATION REQUIRED ✓
+       Confirming identity...
+            </div>
+            
+            <div class="cli-success-box">
+                <div class="cli-text">
+                    <span class="terminal-prompt"></span><strong>Account created successfully!</strong>
+                </div>
+                <p style="margin-top: 10px;">Welcome <span class="cli-highlight">{{USER_NAME}}</span>! Please verify your email address to activate your MockMate account.</p>
+            </div>
+            
+            <div class="cli-command">verify --email="{{USER_EMAIL}}" --code="{{VERIFICATION_CODE}}"</div>
+            
+            <a href="{{VERIFICATION_URL}}" class="cli-button">✅ Verify My Account</a>
+            
+            <div class="verification-code">
+                <div style="font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #cccccc;">Verification Code</div>
+                <div class="code-display">{{VERIFICATION_CODE}}</div>
+                <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #cccccc;">Expires in {{EXPIRY_HOURS}} hours</div>
+            </div>
+            
+            <div class="cli-warning-box">
+                <div class="cli-text">
+                    <span class="terminal-prompt"></span><strong>Why verify?</strong>
+                </div>
+                <ul style="margin-top: 10px; padding-left: 20px; font-size: 13px;">
+                    <li>Secure your account and data</li>
+                    <li>Enable all platform features</li>
+                    <li>Receive important notifications</li>
+                    <li>Connect with employers</li>
+                </ul>
+            </div>
+            
+            <div class="cli-command">Thanks for joining MockMate! 🚀</div>
+        </div>
+        
+        <div class="cli-footer">
+            <div class="cli-logo">MockMate</div>
+            <p>AI-Powered Interview Platform</p>
+        </div>
+    </div>
+</body>
+</html>

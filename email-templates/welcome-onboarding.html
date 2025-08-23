@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en" style="background-color: #0a0a0a;">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to MockMate - Your AI Interview Platform</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', 'JetBrains Mono', 'Fira Code', Consolas, Monaco, monospace;
+            background-color: #0a0a0a;
+            color: #ffffff;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: linear-gradient(135deg, #0a0a0a, #1a1a1a);
+            border: 1px solid #333333;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.1);
+        }
+        
+        .cli-header {
+            background: linear-gradient(90deg, #1a1a1a, #333333);
+            border-bottom: 1px solid #ffbf00;
+            border-radius: 8px 8px 0 0;
+            padding: 20px;
+            position: relative;
+        }
+        
+        .cli-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(transparent 50%, rgba(0, 255, 0, 0.02) 50%, rgba(0, 255, 0, 0.02) 52%, transparent 52%);
+            background-size: 100% 4px;
+            pointer-events: none;
+            border-radius: 8px 8px 0 0;
+        }
+        
+        .cli-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .cli-dots {
+            display: flex;
+            gap: 6px;
+        }
+        
+        .cli-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        
+        .cli-dot.red { background-color: #ff5f56; }
+        .cli-dot.yellow { background-color: #ffbd2e; }
+        .cli-dot.green { background-color: #27ca3f; }
+        
+        .terminal-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            color: #ffd700;
+            margin-left: 15px;
+        }
+        
+        .cli-path {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: #00ff00;
+            opacity: 0.8;
+        }
+        
+        .email-content {
+            padding: 30px 25px;
+            position: relative;
+        }
+        
+        .terminal-prompt {
+            font-family: 'JetBrains Mono', monospace;
+            color: #00ff00;
+            font-weight: 700;
+            margin-right: 8px;
+        }
+        
+        .terminal-prompt::before {
+            content: '$ ';
+        }
+        
+        .cli-text {
+            font-family: 'JetBrains Mono', monospace;
+            color: #ffffff;
+            line-height: 1.4;
+        }
+        
+        .cli-command {
+            background: rgba(255, 215, 0, 0.1);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            border-radius: 4px;
+            padding: 12px 15px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            color: #ffd700;
+            margin: 15px 0;
+            position: relative;
+        }
+        
+        .cli-command::before {
+            content: '> ';
+            color: #00ff00;
+            font-weight: 700;
+        }
+        
+        .cli-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #ffd700, #ffbf00);
+            color: #0a0a0a;
+            padding: 12px 24px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 14px;
+            border: 1px solid #ffd700;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .cli-button:hover {
+            background: linear-gradient(135deg, #ffbf00, #e6a600);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+            transform: translateY(-1px);
+        }
+        
+        .cli-success-box {
+            background: rgba(0, 255, 0, 0.05);
+            border-left: 4px solid #00ff00;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 6px 6px 0;
+        }
+        
+        .cli-info-box {
+            background: rgba(0, 255, 255, 0.05);
+            border-left: 4px solid #00ffff;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 6px 6px 0;
+        }
+        
+        .cli-divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #333333, transparent);
+            margin: 25px 0;
+        }
+        
+        .cli-footer {
+            background: #1a1a1a;
+            border-top: 1px solid #333333;
+            border-radius: 0 0 8px 8px;
+            padding: 20px 25px;
+            font-size: 12px;
+            color: #666666;
+        }
+        
+        .cli-footer a {
+            color: #ffd700;
+            text-decoration: none;
+        }
+        
+        .cli-footer a:hover {
+            color: #ffbf00;
+            text-decoration: underline;
+        }
+        
+        .cli-logo {
+            display: inline-block;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            font-size: 16px;
+            color: #ffd700;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+        
+        .cli-highlight {
+            color: #ffd700;
+            font-weight: 600;
+        }
+        
+        .cli-steps {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid #333333;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .cli-step {
+            display: flex;
+            align-items: flex-start;
+            margin: 15px 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+        }
+        
+        .cli-step-number {
+            background: #ffd700;
+            color: #0a0a0a;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+        
+        .cli-step-content {
+            flex: 1;
+        }
+        
+        .ascii-art {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: #ffd700;
+            text-align: center;
+            margin: 20px 0;
+            white-space: pre-line;
+        }
+        
+        /* Responsive styles */
+        @media only screen and (max-width: 600px) {
+            .email-container {
+                margin: 10px;
+                border-radius: 6px;
+            }
+            
+            .email-content {
+                padding: 20px 15px;
+            }
+            
+            .cli-button {
+                display: block;
+                text-align: center;
+                margin: 15px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <!-- Header -->
+        <div class="cli-header">
+            <div class="cli-title">
+                <div class="cli-dots">
+                    <div class="cli-dot red"></div>
+                    <div class="cli-dot yellow"></div>
+                    <div class="cli-dot green"></div>
+                </div>
+                <div class="terminal-title">MockMate Terminal</div>
+            </div>
+            <div class="cli-path">~/mockmate/welcome</div>
+        </div>
+        
+        <!-- Content -->
+        <div class="email-content">
+            <div class="ascii-art">
+╔══════════════════════════════════════════════════════════╗
+║                    WELCOME TO MOCKMATE                   ║
+║                  AI-Powered Interview Platform           ║
+╚══════════════════════════════════════════════════════════╝</div>
+            
+            <div class="cli-success-box">
+                <div class="cli-text">
+                    <span class="terminal-prompt"></span><strong>Account successfully created!</strong>
+                </div>
+                <p style="margin-top: 10px;">Hello <span class="cli-highlight">{{USER_NAME}}</span>, welcome to MockMate - your AI-powered interview platform.</p>
+            </div>
+            
+            <div class="cli-text" style="margin: 20px 0;">
+                <span class="terminal-prompt"></span>Initializing your MockMate experience...
+            </div>
+            
+            <div class="cli-command">mockmate --init --user={{USER_EMAIL}}</div>
+            
+            <div class="cli-steps">
+                <h3 style="color: #ffd700; font-family: 'JetBrains Mono', monospace; margin-bottom: 20px;">
+                    <span class="terminal-prompt"></span>Quick Start Guide:
+                </h3>
+                
+                <div class="cli-step">
+                    <div class="cli-step-number">1</div>
+                    <div class="cli-step-content">
+                        <strong style="color: #00ffff;">Complete Your Profile</strong><br>
+                        <span style="color: #cccccc;">Set up your personal details, skills, and interview preferences</span>
+                    </div>
+                </div>
+                
+                <div class="cli-step">
+                    <div class="cli-step-number">2</div>
+                    <div class="cli-step-content">
+                        <strong style="color: #00ffff;">Practice Interview</strong><br>
+                        <span style="color: #cccccc;">Take your first AI-powered mock interview to assess your skills</span>
+                    </div>
+                </div>
+                
+                <div class="cli-step">
+                    <div class="cli-step-number">3</div>
+                    <div class="cli-step-content">
+                        <strong style="color: #00ffff;">Review & Improve</strong><br>
+                        <span style="color: #cccccc;">Get detailed feedback and recommendations to enhance your performance</span>
+                    </div>
+                </div>
+                
+                <div class="cli-step">
+                    <div class="cli-step-number">4</div>
+                    <div class="cli-step-content">
+                        <strong style="color: #00ffff;">Schedule Real Interviews</strong><br>
+                        <span style="color: #cccccc;">Connect with employers and ace your real interviews</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="{{LOGIN_URL}}" class="cli-button">Launch MockMate Platform</a>
+            </div>
+            
+            <div class="cli-info-box">
+                <div class="cli-text">
+                    <span class="terminal-prompt"></span><strong>What's Included:</strong>
+                </div>
+                <ul style="margin-top: 10px; padding-left: 20px; font-family: 'JetBrains Mono', monospace; font-size: 13px;">
+                    <li style="margin: 5px 0;">✓ AI-powered interview simulations</li>
+                    <li style="margin: 5px 0;">✓ Real-time feedback and scoring</li>
+                    <li style="margin: 5px 0;">✓ Industry-specific question banks</li>
+                    <li style="margin: 5px 0;">✓ Performance analytics dashboard</li>
+                    <li style="margin: 5px 0;">✓ Interview scheduling tools</li>
+                </ul>
+            </div>
+            
+            <div class="cli-divider"></div>
+            
+            <div class="cli-text" style="text-align: center;">
+                <span class="terminal-prompt"></span>Need help? Run: <span style="color: #00ffff;">mockmate --help</span> or contact our support team
+            </div>
+            
+            <div class="cli-command">
+                Support available 24/7 at: support@mockmate.ai
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="cli-footer">
+            <div style="text-align: center;">
+                <div class="cli-logo">MockMate</div>
+                <div style="margin-top: 10px;">
+                    <p>AI-Powered Interview Platform</p>
+                    <p style="margin-top: 5px;">
+                        <a href="{{UNSUBSCRIBE_URL}}">Unsubscribe</a> | 
+                        <a href="{{SUPPORT_URL}}">Support</a> | 
+                        <a href="{{WEBSITE_URL}}">Website</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

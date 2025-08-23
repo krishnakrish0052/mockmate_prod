@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MockMate Desktop App Launch Example</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f8fafc;
+        }
+        
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .session-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            background: #f1f5f9;
+        }
+        
+        .launch-btn {
+            display: inline-flex;
+            align-items: center;
+            padding: 10px 20px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+        
+        .launch-btn:hover {
+            background: #2563eb;
+        }
+        
+        .launch-btn:disabled {
+            background: #9ca3af;
+            cursor: default;
+        }
+        
+        .launch-btn.launching {
+            background: #059669;
+        }
+        
+        .error-message {
+            margin-top: 10px;
+            padding: 10px 15px;
+            background: #fee2e2;
+            border: 1px solid #fca5a5;
+            border-radius: 6px;
+            color: #991b1b;
+            font-size: 13px;
+        }
+        
+        .success-message {
+            margin-top: 10px;
+            padding: 10px 15px;
+            background: #ecfdf5;
+            border: 1px solid #a7f3d0;
+            border-radius: 6px;
+            color: #047857;
+            font-size: 13px;
+        }
+        
+        .session-id {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 8px;
+        }
+        
+        .status-indicator {
+            margin-left: 10px;
+            font-size: 16px;
+        }
+        
+        .status-good { color: #059669; }
+        .status-warning { color: #f59e0b; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>MockMate Desktop App Launch</h1>
+        <p>Click the button below to launch the desktop app for a specific session.</p>
+        
+                <div class="session-card">
+                    <h3>✅ Test Session - WORKING!</h3>
+                    <p><strong>Status: URL scheme properly registered and working!</strong></p>
+                    <p>Click the button below to launch the MockMate desktop app with session data.</p>
+                    
+                    <button 
+                        id="launchBtn" 
+                        class="launch-btn"
+                        onclick="launchDesktop()"
+                    >
+                        <span style="margin-right: 8px;">📱</span>
+                        Open in Desktop App
+                        <span id="statusIndicator" class="status-indicator"></span>
+                    </button>
+                    
+                    <div id="messageArea"></div>
+                    <div class="session-id">Session: 37683083-1e32-449b-9c53-78e44f953ee9</div>
+                </div>
+        
+        <div class="session-card">
+            <h3>Alternative Launch Method</h3>
+            <p>If the button above doesn't work, try this direct link:</p>
+            
+            <a 
+                href="#" 
+                class="launch-btn"
+                onclick="launchDesktopAlternative(); return false;"
+            >
+                <span style="margin-right: 8px;">🔗</span>
+                Direct Link Launch
+            </a>
+        </div>
+        
+        <div class="session-card">
+            <h3>Troubleshooting</h3>
+            <p>If you're getting errors:</p>
+            <ol>
+                <li>Make sure the MockMate desktop app is installed</li>
+                <li>Run the desktop app at least once to register the URL handler</li>
+                <li>The launch must be triggered by a user click (not automatic)</li>
+                <li>Check your browser's developer console for more details</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        // Your session data - replace with actual values
+        const SESSION_CONFIG = {
+            sessionId: '37683083-1e32-449b-9c53-78e44f953ee9',
+            token: 'your-auth-token-here', // Replace with actual token
+            userId: 'your-user-id-here'     // Replace with actual user ID
+        };
+
+        let isLaunching = false;
+
+        /**
+         * Launch the desktop app - must be called from user interaction
+         */
+        function launchDesktop() {
+            if (isLaunching) return;
+            
+            const btn = document.getElementById('launchBtn');
+            const messageArea = document.getElementById('messageArea');
+            
+            isLaunching = true;
+            btn.disabled = true;
+            btn.classList.add('launching');
+            btn.innerHTML = '<span style="margin-right: 8px;">🚀</span>Launching...';
+            
+            // Clear previous messages
+            messageArea.innerHTML = '';
+            
+            try {
+                console.log('Launching desktop app for session:', SESSION_CONFIG.sessionId);
+                
+                // Build the protocol URL
+                let protocolUrl = `mockmate://session/${SESSION_CONFIG.sessionId}`;
+                
+                // Add query parameters if available
+                const params = new URLSearchParams();
+                if (SESSION_CONFIG.token) params.append('token', SESSION_CONFIG.token);
+                if (SESSION_CONFIG.userId) params.append('user_id', SESSION_CONFIG.userId);
+                
+                if (params.toString()) {
+                    protocolUrl += `?${params.toString()}`;
+                }
+                
+                console.log('Protocol URL:', protocolUrl);
+                
+                // Launch using window.location.href (most reliable for user gestures)
+                window.location.href = protocolUrl;
+                
+                // Show success message
+                messageArea.innerHTML = `
+                    <div class="success-message">
+                        ✅ Desktop app launch attempted! The app should open momentarily.
+                        <br><small>URL: ${protocolUrl}</small>
+                    </div>
+                `;
+                
+                // Reset button after delay
+                setTimeout(() => {
+                    resetLaunchButton();
+                }, 3000);
+                
+            } catch (error) {
+                console.error('Desktop launch failed:', error);
+                
+                messageArea.innerHTML = `
+                    <div class="error-message">
+                        ❌ <strong>Launch failed:</strong> ${error.message}
+                        <br><small>Make sure the desktop app is installed and run it once to register the URL handler.</small>
+                    </div>
+                `;
+                
+                resetLaunchButton();
+            }
+        }
+
+        /**
+         * Alternative launch method using window.open
+         */
+        function launchDesktopAlternative() {
+            try {
+                let protocolUrl = `mockmate://session/${SESSION_CONFIG.sessionId}`;
+                
+                const params = new URLSearchParams();
+                if (SESSION_CONFIG.token) params.append('token', SESSION_CONFIG.token);
+                if (SESSION_CONFIG.userId) params.append('user_id', SESSION_CONFIG.userId);
+                
+                if (params.toString()) {
+                    protocolUrl += `?${params.toString()}`;
+                }
+                
+                console.log('Alternative launch with URL:', protocolUrl);
+                
+                // Try window.open method
+                const popup = window.open(protocolUrl, '_blank');
+                
+                // Close popup after a delay
+                setTimeout(() => {
+                    if (popup && !popup.closed) {
+                        popup.close();
+                    }
+                }, 1000);
+                
+                alert('Alternative launch attempted! Check if the desktop app opened.');
+                
+            } catch (error) {
+                console.error('Alternative launch failed:', error);
+                alert('Alternative launch failed: ' + error.message);
+            }
+        }
+
+        /**
+         * Reset the launch button to its original state
+         */
+        function resetLaunchButton() {
+            const btn = document.getElementById('launchBtn');
+            isLaunching = false;
+            btn.disabled = false;
+            btn.classList.remove('launching');
+            btn.innerHTML = `
+                <span style="margin-right: 8px;">📱</span>
+                Open in Desktop App
+                <span id="statusIndicator" class="status-indicator"></span>
+            `;
+        }
+
+        /**
+         * Check if desktop app is potentially installed
+         */
+        function checkDesktopAppStatus() {
+            // This is a basic check - not foolproof
+            const statusIndicator = document.getElementById('statusIndicator');
+            
+            try {
+                // Create a test iframe (hidden)
+                const testFrame = document.createElement('iframe');
+                testFrame.style.display = 'none';
+                testFrame.src = 'mockmate://test';
+                
+                testFrame.onload = () => {
+                    statusIndicator.textContent = '✓';
+                    statusIndicator.className = 'status-indicator status-good';
+                    statusIndicator.title = 'Desktop app appears to be registered';
+                    document.body.removeChild(testFrame);
+                };
+                
+                testFrame.onerror = () => {
+                    statusIndicator.textContent = '⚠';
+                    statusIndicator.className = 'status-indicator status-warning';
+                    statusIndicator.title = 'Desktop app may not be installed';
+                    document.body.removeChild(testFrame);
+                };
+                
+                document.body.appendChild(testFrame);
+                
+                // Fallback: remove after timeout
+                setTimeout(() => {
+                    if (document.body.contains(testFrame)) {
+                        document.body.removeChild(testFrame);
+                        statusIndicator.textContent = '?';
+                        statusIndicator.title = 'Could not determine desktop app status';
+                    }
+                }, 2000);
+                
+            } catch (error) {
+                console.warn('Could not check desktop app status:', error);
+            }
+        }
+
+        // Check desktop app status when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            checkDesktopAppStatus();
+        });
+
+        // Log session config for debugging
+        console.log('Session configuration:', SESSION_CONFIG);
+    </script>
+</body>
+</html>

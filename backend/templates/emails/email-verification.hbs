@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Verification - MockMate</title>
+    <style>
+        /* Reset styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Terminal theme styles */
+        body {
+            font-family: 'Courier New', 'Monaco', 'Lucida Console', monospace;
+            background-color: #0a0a0a;
+            color: #00ff41;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+        }
+
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #111111;
+            border: 2px solid #00ff41;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.3);
+        }
+
+        .terminal-header {
+            background-color: #1a1a1a;
+            padding: 10px 15px;
+            border-bottom: 1px solid #00ff41;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .terminal-buttons {
+            display: flex;
+            gap: 6px;
+        }
+
+        .terminal-button {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .btn-close { background-color: #ff5f56; }
+        .btn-minimize { background-color: #ffbd2e; }
+        .btn-maximize { background-color: #27ca3f; }
+
+        .terminal-title {
+            color: #00ff41;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+
+        .terminal-content {
+            padding: 30px;
+            background-color: #0a0a0a;
+        }
+
+        .terminal-prompt {
+            color: #00ff41;
+            font-weight: bold;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .terminal-prompt::before {
+            content: "$ ";
+            color: #00ff41;
+        }
+
+        h1, h2, h3 {
+            color: #00ff41;
+            margin-bottom: 15px;
+            font-family: 'Courier New', monospace;
+        }
+
+        h1 {
+            font-size: 24px;
+            text-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
+        }
+
+        h2 {
+            font-size: 20px;
+            color: #33ff66;
+        }
+
+        h3 {
+            font-size: 18px;
+            color: #66ff99;
+        }
+
+        p {
+            margin-bottom: 15px;
+            color: #cccccc;
+            font-size: 14px;
+        }
+
+        .highlight-text {
+            color: #00ff41;
+            font-weight: bold;
+            background-color: rgba(0, 255, 65, 0.1);
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+
+        .terminal-button-link {
+            display: inline-block;
+            background-color: transparent;
+            color: #00ff41;
+            border: 2px solid #00ff41;
+            padding: 12px 24px;
+            text-decoration: none;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 4px;
+            margin: 15px 0;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .terminal-button-link:hover {
+            background-color: #00ff41;
+            color: #0a0a0a;
+            box-shadow: 0 0 15px rgba(0, 255, 65, 0.7);
+        }
+
+        .code-block {
+            background-color: #1a1a1a;
+            border: 1px solid #333;
+            border-left: 4px solid #00ff41;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #cccccc;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+
+        .terminal-info {
+            background-color: rgba(0, 255, 65, 0.1);
+            border: 1px solid #00ff41;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .terminal-warning {
+            background-color: rgba(255, 165, 0, 0.1);
+            border: 1px solid #ffa500;
+            color: #ffa500;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .terminal-footer {
+            background-color: #1a1a1a;
+            padding: 20px 30px;
+            border-top: 1px solid #333;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .terminal-footer a {
+            color: #00ff41;
+            text-decoration: none;
+        }
+
+        .terminal-footer a:hover {
+            text-decoration: underline;
+        }
+
+        .ascii-art {
+            font-family: monospace;
+            white-space: pre;
+            color: #00ff41;
+            text-align: center;
+            margin: 20px 0;
+            font-size: 12px;
+            line-height: 1;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-success { background-color: #00ff41; }
+        .status-warning { background-color: #ffa500; }
+        .status-error { background-color: #ff4444; }
+
+        /* Responsive styles */
+        @media only screen and (max-width: 600px) {
+            .email-container {
+                margin: 10px;
+                border-radius: 4px;
+            }
+            
+            .terminal-content {
+                padding: 20px;
+            }
+            
+            .terminal-header {
+                padding: 8px 12px;
+            }
+            
+            h1 { font-size: 20px; }
+            h2 { font-size: 18px; }
+            h3 { font-size: 16px; }
+            
+            .terminal-button-link {
+                padding: 10px 20px;
+                font-size: 12px;
+            }
+        }
+
+        /* Dark mode email client compatibility */
+        [data-ogsc] .email-container {
+            background-color: #111111 !important;
+        }
+        
+        [data-ogsc] .terminal-content {
+            background-color: #0a0a0a !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <!-- Terminal Header -->
+        <div class="terminal-header">
+            <div class="terminal-buttons">
+                <div class="terminal-button btn-close"></div>
+                <div class="terminal-button btn-minimize"></div>
+                <div class="terminal-button btn-maximize"></div>
+            </div>
+            <div class="terminal-title">MockMate Terminal - Email Verification Required</div>
+        </div>
+
+        <!-- Terminal Content -->
+        <div class="terminal-content">
+            <div class="terminal-prompt">mockmate@system:~$</div>
+            
+            <div class="ascii-art">
+    ███╗   ███╗ ██████╗  ██████╗██╗  ██╗███╗   ███╗ █████╗ ████████╗███████╗
+    ████╗ ████║██╔═══██╗██╔════╝██║ ██╔╝████╗ ████║██╔══██╗╚══██╔══╝██╔════╝
+    ██╔████╔██║██║   ██║██║     █████╔╝ ██╔████╔██║███████║   ██║   █████╗  
+    ██║╚██╔╝██║██║   ██║██║     ██╔═██╗ ██║╚██╔╝██║██╔══██║   ██║   ██╔══╝  
+    ██║ ╚═╝ ██║╚██████╔╝╚██████╗██║  ██╗██║ ╚═╝ ██║██║  ██║   ██║   ███████╗
+    ╚═╝     ╚═╝ ╚═════╝  ╚═════╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝  ╚═╝   ╚═╝   ╚══════╝
+            </div>
+
+            <h1>Email Verification Required</h1>
+            
+            <p>Hello <span class="highlight-text">{{userName}}</span>,</p>
+            
+            <p>Welcome to MockMate! To complete your account setup and start using our AI-powered interview platform, you need to verify your email address.</p>
+
+            <div class="terminal-info">
+                <h3>📧 Verification Details:</h3>
+                <p><strong>Account:</strong> {{userEmail}}</p>
+                <p><strong>Status:</strong> Pending Verification</p>
+                <p><strong>Action Required:</strong> Click the verification link below</p>
+            </div>
+
+            <div class="code-block">
+# Execute verification command:
+curl -X POST "{{verificationUrl}}"
+# OR click the button below for GUI verification
+            </div>
+
+            <center>
+                <a href="{{verificationUrl}}" class="terminal-button-link">
+                    VERIFY EMAIL ADDRESS
+                </a>
+            </center>
+
+            <div class="terminal-warning">
+                <h3>⚠️ Security Notice:</h3>
+                <p>This verification link will expire in <strong>24 hours</strong>.</p>
+                <p>If you didn't create this account, please ignore this email.</p>
+            </div>
+
+            <h2>What happens after verification?</h2>
+            <p>Once verified, you'll get access to:</p>
+            <ul style="color: #cccccc; margin-left: 20px; margin-bottom: 15px;">
+                <li>🎯 AI-powered mock interviews</li>
+                <li>📊 Detailed performance analytics</li>
+                <li>💼 Industry-specific interview questions</li>
+                <li>🚀 Personalized improvement suggestions</li>
+            </ul>
+
+            <p>If you're having trouble clicking the button, copy and paste the following URL into your browser:</p>
+            <div class="code-block">{{verificationUrl}}</div>
+
+            <p>Happy interviewing!</p>
+            <p><strong>The MockMate Team</strong></p>
+        </div>
+
+        <!-- Terminal Footer -->
+        <div class="terminal-footer">
+            <p>
+                <span class="status-indicator status-warning"></span>
+                System Status: Awaiting Verification | 
+                <a href="{{baseUrl}}">MockMate Dashboard</a> | 
+                <a href="{{baseUrl}}/support">Support</a>
+            </p>
+            <p style="margin-top: 10px; font-size: 11px;">
+                © {{currentYear}} MockMate. All rights reserved.<br>
+                This email was sent from an automated system. Please do not reply to this email.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

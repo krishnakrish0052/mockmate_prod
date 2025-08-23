@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credits Purchase Confirmation - MockMate</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Courier New', monospace; background-color: #0a0a0a; color: #00ff41; line-height: 1.6; }
+        .email-container { max-width: 600px; margin: 0 auto; background-color: #111111; border: 2px solid #00ff41; border-radius: 8px; box-shadow: 0 0 20px rgba(0, 255, 65, 0.3); }
+        .terminal-header { background-color: #1a1a1a; padding: 10px 15px; border-bottom: 1px solid #00ff41; display: flex; align-items: center; gap: 8px; }
+        .terminal-buttons { display: flex; gap: 6px; }
+        .terminal-button { width: 12px; height: 12px; border-radius: 50%; }
+        .btn-close { background-color: #ff5f56; } .btn-minimize { background-color: #ffbd2e; } .btn-maximize { background-color: #27ca3f; }
+        .terminal-title { color: #00ff41; font-size: 14px; margin-left: 10px; }
+        .terminal-content { padding: 30px; background-color: #0a0a0a; }
+        .terminal-prompt { color: #00ff41; font-weight: bold; margin-bottom: 15px; font-size: 16px; }
+        .terminal-prompt::before { content: "$ "; color: #00ff41; }
+        h1 { color: #00ff41; font-size: 24px; text-shadow: 0 0 10px rgba(0, 255, 65, 0.5); margin-bottom: 15px; }
+        h2 { color: #33ff66; font-size: 20px; margin-bottom: 15px; }
+        h3 { color: #66ff99; font-size: 18px; margin-bottom: 15px; }
+        p { margin-bottom: 15px; color: #cccccc; font-size: 14px; }
+        .highlight-text { color: #00ff41; font-weight: bold; background-color: rgba(0, 255, 65, 0.1); padding: 2px 4px; border-radius: 3px; }
+        .terminal-info { background-color: rgba(0, 255, 65, 0.1); border: 1px solid #00ff41; padding: 15px; margin: 20px 0; border-radius: 4px; }
+        .code-block { background-color: #1a1a1a; border: 1px solid #333; border-left: 4px solid #00ff41; padding: 15px; margin: 15px 0; font-family: 'Courier New', monospace; font-size: 13px; color: #cccccc; border-radius: 4px; }
+        .terminal-button-link { display: inline-block; background-color: transparent; color: #00ff41; border: 2px solid #00ff41; padding: 12px 24px; text-decoration: none; font-family: 'Courier New', monospace; font-size: 14px; font-weight: bold; border-radius: 4px; margin: 15px 0; transition: all 0.3s ease; text-transform: uppercase; letter-spacing: 1px; }
+        .terminal-footer { background-color: #1a1a1a; padding: 20px 30px; border-top: 1px solid #333; text-align: center; font-size: 12px; color: #666; }
+        .status-indicator { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; }
+        .status-success { background-color: #00ff41; }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="terminal-header">
+            <div class="terminal-buttons"><div class="terminal-button btn-close"></div><div class="terminal-button btn-minimize"></div><div class="terminal-button btn-maximize"></div></div>
+            <div class="terminal-title">MockMate Terminal - Credits Purchase Confirmed</div>
+        </div>
+        <div class="terminal-content">
+            <div class="terminal-prompt">mockmate@system:~$</div>
+            <h1>💰 Credits Purchase Confirmed!</h1>
+            <p>Hello <span class="highlight-text">{{userName}}</span>,</p>
+            <p>Thank you for your purchase! Your MockMate credits have been successfully added to your account.</p>
+            <div class="terminal-info">
+                <h3>💳 Purchase Details:</h3>
+                <p><strong>Credits Purchased:</strong> <span class="highlight-text">{{creditsAmount}}</span></p>
+                <p><strong>Amount Paid:</strong> ${{purchaseAmount}}</p>
+                <p><strong>Transaction ID:</strong> {{transactionId}}</p>
+                <p><strong>Purchase Date:</strong> {{purchaseDate}}</p>
+            </div>
+            <div class="code-block">
+# Credits added to account
+mockmate credits --balance
+# Total Credits: {{creditsAmount}}
+# Status: ACTIVE
+            </div>
+            <h2>Ready to Practice!</h2>
+            <p>Your credits are now available and you can start using them for:</p>
+            <ul style="color: #cccccc; margin-left: 20px; margin-bottom: 15px;">
+                <li>🎯 AI-powered mock interviews</li>
+                <li>📊 Detailed performance analysis</li>
+                <li>💡 Personalized feedback and suggestions</li>
+                <li>🔄 Multiple interview retakes</li>
+            </ul>
+            <center><a href="{{baseUrl}}/dashboard" class="terminal-button-link">START INTERVIEWING</a></center>
+            <p>Keep an eye on your credit balance in your dashboard. Happy practicing!</p>
+            <p><strong>The MockMate Team</strong></p>
+        </div>
+        <div class="terminal-footer">
+            <p><span class="status-indicator status-success"></span>System Status: Online | <a href="{{baseUrl}}" style="color: #00ff41;">MockMate Dashboard</a> | <a href="{{baseUrl}}/support" style="color: #00ff41;">Support</a></p>
+            <p style="margin-top: 10px; font-size: 11px;">© {{currentYear}} MockMate. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

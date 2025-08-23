@@ -1,0 +1,36 @@
+/* Terminal Theme Ring Color Overrides */
+
+/* Override any default blue rings with green for terminal theme */
+*:focus,
+*:focus-visible {
+  --tw-ring-color: rgba(0, 255, 0, 0.1) !important;
+}
+
+/* Specific ring color overrides */
+.ring,
+.ring-blue-500,
+.focus\:ring,
+.focus\:ring-blue-500 {
+  --tw-ring-color: rgba(0, 255, 0, 0.1) !important;
+}
+
+/* Override any hardcoded blue ring colors */
+[style*='--tw-ring-color: rgb(59 130 246'],
+[style*='ring-color: rgb(59 130 246'] {
+  --tw-ring-color: rgba(0, 255, 0, 0.1) !important;
+}
+
+/* Focus ring for form elements */
+input:focus,
+select:focus,
+textarea:focus,
+button:focus {
+  --tw-ring-color: rgba(0, 255, 0, 0.1) !important;
+  ring-color: rgba(0, 255, 0, 0.1) !important;
+}
+
+/* Ensure all focus states use green ring */
+:focus-visible {
+  outline: 2px solid rgba(0, 255, 0, 0.3) !important;
+  outline-offset: 2px !important;
+}
