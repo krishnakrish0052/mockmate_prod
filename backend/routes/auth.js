@@ -144,10 +144,9 @@ router.post('/register', registrationRateLimit, registerValidation, async (req, 
     const startingCredits = await config.get('new_user_starting_credits', 0);
 
     // Create user (initially unverified)
-    const fullName = `${firstName} ${lastName}`;
     const newUserQuery = `
-      INSERT INTO users (email, password_hash, first_name, last_name, name, credits, is_verified)
-      VALUES ($1, $2, $3, $4, $5, $6, FALSE)
+      INSERT INTO users (email, password_hash, first_name, last_name, credits, is_verified)
+      VALUES ($1, $2, $3, $4, $5, FALSE)
       RETURNING id, email, first_name, last_name, credits, created_at, is_verified
     `;
 
@@ -156,7 +155,6 @@ router.post('/register', registrationRateLimit, registerValidation, async (req, 
       hashedPassword,
       firstName,
       lastName,
-      fullName,
       startingCredits, // Dynamic starting credits
     ]);
 
