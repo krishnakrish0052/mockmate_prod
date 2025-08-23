@@ -162,8 +162,8 @@ router.post('/register', registrationRateLimit, registerValidation, async (req, 
 
     // Send email verification
     try {
-      const EmailVerificationService = (await import('../services/EmailVerificationService.js'))
-        .default;
+      const EmailVerificationServiceModule = await import('../services/EmailVerificationService.js');
+      const EmailVerificationService = EmailVerificationServiceModule.default;
       const emailVerificationService = new EmailVerificationService(pool);
 
       const verificationResult = await emailVerificationService.sendVerificationEmail(user);
