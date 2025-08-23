@@ -80,5 +80,6 @@ webhook-diagnostic-complete.js
 *.sql.bak
 *.dump
 *.sql
+!minimal-production-schema.sql
 mockmate-production-backup-*.sql
 export-database.ps1
