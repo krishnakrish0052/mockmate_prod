@@ -81,5 +81,6 @@ webhook-diagnostic-complete.js
 *.dump
 *.sql
 !minimal-production-schema.sql
+!populate-dynamic-config.sql
 mockmate-production-backup-*.sql
 export-database.ps1
