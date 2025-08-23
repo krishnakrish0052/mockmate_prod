@@ -1,7 +1,7 @@
 import { Alert } from '../components/alerts/AlertNotification';
 
-// API base URL - fallback to relative path for Create React App
-const API_BASE = '/api';
+// API base URL - use environment variable or fallback to localhost
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
 export interface CreateAlertRequest {
   title: string;
@@ -61,7 +61,7 @@ export interface AlertTemplate {
 
 class AlertService {
   private getAuthHeaders(): Record<string, string> {
-    const token = localStorage.getItem('authToken');
+    const token = localStorage.getItem('accessToken');
     return {
       'Content-Type': 'application/json',
       ...(token && { Authorization: `Bearer ${token}` }),
@@ -191,7 +191,7 @@ class AlertService {
   }
 
   async getAlertAnalytics(): Promise<AlertAnalytics> {
-    return this.request<AlertAnalytics>('/admin/alerts/analytics');
+    return this.request<AlertAnalytics>('/admin/alerts/analytics/summary');
   }
 
   async broadcastAlert(
