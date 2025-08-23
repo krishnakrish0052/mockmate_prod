@@ -24,9 +24,7 @@ const AlertManagement: React.FC = () => {
       </TerminalWindow>
 
       {/* Alert Dashboard */}
-      <div className='rounded-lg border border-cli-gray bg-cli-darker'>
-        <AlertDashboard className='bg-transparent' />
-      </div>
+      <AlertDashboard className='!bg-transparent !py-0' />
     </div>
   );
 };

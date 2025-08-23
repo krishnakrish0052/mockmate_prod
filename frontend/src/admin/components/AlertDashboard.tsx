@@ -41,9 +41,11 @@ export const AlertDashboard: React.FC<AlertDashboardProps> = ({ className = '' }
   const loadAnalytics = async () => {
     try {
       const response = await alertService.getAlertAnalytics();
-      setAnalytics(response);
+      // Handle the response format from backend (wrapped in success/data structure)
+      setAnalytics(response.data || response);
     } catch (error) {
       console.error('Failed to load analytics:', error);
+      setError(error instanceof Error ? error.message : 'Failed to load analytics');
     }
   };
 
@@ -104,21 +106,21 @@ export const AlertDashboard: React.FC<AlertDashboardProps> = ({ className = '' }
       {/* Header with actions */}
       <div className='flex items-center justify-between'>
         <div>
-          <h1 className='text-2xl font-bold text-gray-900'>Alert Management</h1>
-          <p className='text-gray-600'>Create and manage system alerts for users</p>
+          <h1 className='text-2xl font-bold text-cli-golden'>Alert Management</h1>
+          <p className='text-cli-light-gray'>Create and manage system alerts for users</p>
         </div>
 
         <div className='flex space-x-3'>
           <button
             onClick={() => setCurrentView('analytics')}
-            className='rounded-md bg-blue-50 px-4 py-2 text-blue-600 transition-colors hover:bg-blue-100'
+            className='rounded-md border border-cli-gray bg-cli-dark px-4 py-2 text-cli-amber transition-colors hover:bg-cli-gray hover:text-cli-golden'
           >
             View Analytics
           </button>
 
           <button
             onClick={() => setCurrentView('create')}
-            className='rounded-md bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700'
+            className='rounded-md bg-cli-golden px-4 py-2 text-cli-black font-medium transition-colors hover:bg-cli-amber'
           >
             Create Alert
           </button>
@@ -128,39 +130,39 @@ export const AlertDashboard: React.FC<AlertDashboardProps> = ({ className = '' }
       {/* Quick Stats */}
       {analytics && (
         <div className='grid grid-cols-1 gap-4 md:grid-cols-4'>
-          <div className='rounded-lg border bg-white p-4 shadow'>
-            <div className='text-2xl font-bold text-blue-600'>{analytics.totalAlerts}</div>
-            <div className='text-sm text-gray-600'>Total Alerts</div>
+          <div className='rounded-lg border border-cli-gray bg-cli-darker p-4 shadow-cli-border'>
+            <div className='text-2xl font-bold text-cli-cyan'>{analytics.totalAlerts}</div>
+            <div className='text-sm text-cli-light-gray'>Total Alerts</div>
           </div>
 
-          <div className='rounded-lg border bg-white p-4 shadow'>
-            <div className='text-2xl font-bold text-yellow-600'>{analytics.unreadCount}</div>
-            <div className='text-sm text-gray-600'>Unread Alerts</div>
+          <div className='rounded-lg border border-cli-gray bg-cli-darker p-4 shadow-cli-border'>
+            <div className='text-2xl font-bold text-cli-amber'>{analytics.unreadCount}</div>
+            <div className='text-sm text-cli-light-gray'>Unread Alerts</div>
           </div>
 
-          <div className='rounded-lg border bg-white p-4 shadow'>
-            <div className='text-2xl font-bold text-green-600'>
+          <div className='rounded-lg border border-cli-gray bg-cli-darker p-4 shadow-cli-border'>
+            <div className='text-2xl font-bold text-cli-green'>
               {analytics.totalAlerts - analytics.unreadCount}
             </div>
-            <div className='text-sm text-gray-600'>Read Alerts</div>
+            <div className='text-sm text-cli-light-gray'>Read Alerts</div>
           </div>
 
-          <div className='rounded-lg border bg-white p-4 shadow'>
-            <div className='text-2xl font-bold text-purple-600'>
+          <div className='rounded-lg border border-cli-gray bg-cli-darker p-4 shadow-cli-border'>
+            <div className='text-2xl font-bold text-red-400'>
               {analytics.typeBreakdown.critical || 0}
             </div>
-            <div className='text-sm text-gray-600'>Critical Alerts</div>
+            <div className='text-sm text-cli-light-gray'>Critical Alerts</div>
           </div>
         </div>
       )}
 
       {/* Error Display */}
       {error && (
-        <div className='rounded-md border border-red-200 bg-red-50 p-4'>
-          <p className='text-sm text-red-600'>{error}</p>
+        <div className='rounded-md border border-red-600 bg-cli-dark p-4 shadow-glow-golden'>
+          <p className='text-sm text-red-400 cli-glow'>{error}</p>
           <button
             onClick={() => setError(null)}
-            className='mt-2 text-xs text-red-600 underline hover:text-red-800'
+            className='mt-2 text-xs text-red-300 underline hover:text-red-200 transition-colors'
           >
             Dismiss
           </button>
@@ -168,12 +170,12 @@ export const AlertDashboard: React.FC<AlertDashboardProps> = ({ className = '' }
       )}
 
       {/* Filters and Search */}
-      <div className='rounded-lg border bg-white p-4 shadow'>
-        <h3 className='mb-4 text-lg font-semibold text-gray-900'>Filter Alerts</h3>
+      <div className='rounded-lg border border-cli-gray bg-cli-darker p-4 shadow-cli-border'>
+        <h3 className='mb-4 text-lg font-semibold text-cli-golden'>Filter Alerts</h3>
 
         <div className='grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-5'>
           <div>
-            <label className='mb-1 block text-sm text-gray-600'>Type</label>
+            <label className='mb-1 block text-sm text-cli-light-gray'>Type</label>
             <select
               value={filters.alertType?.[0] || ''}
               onChange={e => {
@@ -186,7 +188,7 @@ export const AlertDashboard: React.FC<AlertDashboardProps> = ({ className = '' }
                 setFilters(newFilters);
                 loadAlerts(newFilters);
               }}
-              className='w-full rounded border border-gray-300 px-3 py-2 text-sm'
+              className='w-full rounded border border-cli-gray bg-cli-dark px-3 py-2 text-sm text-cli-white focus:border-cli-golden focus:ring-1 focus:ring-cli-golden transition-colors'
             >
               <option value=''>All Types</option>
               <option value='info'>Info</option>
@@ -198,7 +200,7 @@ export const AlertDashboard: React.FC<AlertDashboardProps> = ({ className = '' }
           </div>
 
           <div>
-            <label className='mb-1 block text-sm text-gray-600'>Priority</label>
+            <label className='mb-1 block text-sm text-cli-light-gray'>Priority</label>
             <select
               value={filters.priority?.[0] || ''}
               onChange={e => {
@@ -211,7 +213,7 @@ export const AlertDashboard: React.FC<AlertDashboardProps> = ({ className = '' }
                 setFilters(newFilters);
                 loadAlerts(newFilters);
               }}
-              className='w-full rounded border border-gray-300 px-3 py-2 text-sm'
+              className='w-full rounded border border-cli-gray bg-cli-dark px-3 py-2 text-sm text-cli-white focus:border-cli-golden focus:ring-1 focus:ring-cli-golden transition-colors'
             >
               <option value=''>All Priorities</option>
               <option value='low'>Low</option>
@@ -222,7 +224,7 @@ export const AlertDashboard: React.FC<AlertDashboardProps> = ({ className = '' }
           </div>
 
           <div>
-            <label className='mb-1 block text-sm text-gray-600'>Status</label>
+            <label className='mb-1 block text-sm text-cli-light-gray'>Status</label>
             <select
               value={filters.isRead !== undefined ? filters.isRead.toString() : ''}
               onChange={e => {
@@ -235,7 +237,7 @@ export const AlertDashboard: React.FC<AlertDashboardProps> = ({ className = '' }
                 setFilters(newFilters);
                 loadAlerts(newFilters);
               }}
-              className='w-full rounded border border-gray-300 px-3 py-2 text-sm'
+              className='w-full rounded border border-cli-gray bg-cli-dark px-3 py-2 text-sm text-cli-white focus:border-cli-golden focus:ring-1 focus:ring-cli-golden transition-colors'
             >
               <option value=''>All Status</option>
               <option value='false'>Unread</option>
@@ -244,7 +246,7 @@ export const AlertDashboard: React.FC<AlertDashboardProps> = ({ className = '' }
           </div>
 
           <div>
-            <label className='mb-1 block text-sm text-gray-600'>Start Date</label>
+            <label className='mb-1 block text-sm text-cli-light-gray'>Start Date</label>
             <input
               type='date'
               value={filters.startDate || ''}
@@ -258,12 +260,12 @@ export const AlertDashboard: React.FC<AlertDashboardProps> = ({ className = '' }
                 setFilters(newFilters);
                 loadAlerts(newFilters);
               }}
-              className='w-full rounded border border-gray-300 px-3 py-2 text-sm'
+              className='w-full rounded border border-cli-gray bg-cli-dark px-3 py-2 text-sm text-cli-white focus:border-cli-golden focus:ring-1 focus:ring-cli-golden transition-colors'
             />
           </div>
 
           <div>
-            <label className='mb-1 block text-sm text-gray-600'>End Date</label>
+            <label className='mb-1 block text-sm text-cli-light-gray'>End Date</label>
             <input
               type='date'
               value={filters.endDate || ''}
@@ -277,7 +279,7 @@ export const AlertDashboard: React.FC<AlertDashboardProps> = ({ className = '' }
                 setFilters(newFilters);
                 loadAlerts(newFilters);
               }}
-              className='w-full rounded border border-gray-300 px-3 py-2 text-sm'
+              className='w-full rounded border border-cli-gray bg-cli-dark px-3 py-2 text-sm text-cli-white focus:border-cli-golden focus:ring-1 focus:ring-cli-golden transition-colors'
             />
           </div>
         </div>
@@ -288,14 +290,14 @@ export const AlertDashboard: React.FC<AlertDashboardProps> = ({ className = '' }
               setFilters({ limit: 50 });
               loadAlerts({ limit: 50 });
             }}
-            className='text-sm text-blue-600 hover:text-blue-800'
+            className='text-sm text-cli-cyan hover:text-cli-golden transition-colors'
           >
             Clear Filters
           </button>
 
           <button
             onClick={() => loadAlerts()}
-            className='rounded bg-gray-100 px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-200'
+            className='rounded border border-cli-gray bg-cli-dark px-4 py-2 text-sm text-cli-amber transition-colors hover:bg-cli-gray hover:text-cli-golden'
           >
             Refresh
           </button>
@@ -303,15 +305,15 @@ export const AlertDashboard: React.FC<AlertDashboardProps> = ({ className = '' }
       </div>
 
       {/* Alerts List */}
-      <div className='rounded-lg bg-white shadow'>
-        <div className='border-b border-gray-200 p-4'>
+      <div className='rounded-lg bg-cli-darker border border-cli-gray shadow-cli-border'>
+        <div className='border-b border-cli-gray p-4'>
           <div className='flex items-center justify-between'>
-            <h3 className='text-lg font-semibold text-gray-900'>Recent Alerts ({total})</h3>
+            <h3 className='text-lg font-semibold text-cli-golden'>Recent Alerts ({total})</h3>
 
             <div className='flex space-x-2'>
               <button
                 onClick={() => setCurrentView('create')}
-                className='rounded bg-green-600 px-3 py-1 text-sm text-white transition-colors hover:bg-green-700'
+                className='rounded bg-cli-green px-3 py-1 text-sm text-cli-black font-medium transition-colors hover:bg-cli-cyan'
               >
                 Quick Create
               </button>
@@ -322,16 +324,16 @@ export const AlertDashboard: React.FC<AlertDashboardProps> = ({ className = '' }
         <div className='p-4'>
           {loading ? (
             <div className='flex items-center justify-center py-8'>
-              <div className='h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600'></div>
-              <span className='ml-2 text-gray-600'>Loading alerts...</span>
+              <div className='loading-spinner h-8 w-8'></div>
+              <span className='ml-2 text-cli-light-gray'>Loading alerts...</span>
             </div>
           ) : alerts.length === 0 ? (
-            <div className='py-8 text-center text-gray-500'>
+            <div className='py-8 text-center text-cli-light-gray'>
               <div className='mb-2 text-4xl'>📢</div>
               <p>No alerts found. Create your first alert to get started.</p>
               <button
                 onClick={() => setCurrentView('create')}
-                className='mt-4 rounded-md bg-blue-600 px-4 py-2 text-white transition-colors hover:bg-blue-700'
+                className='mt-4 rounded-md bg-cli-golden px-4 py-2 text-cli-black font-medium transition-colors hover:bg-cli-amber'
               >
                 Create Alert
               </button>
@@ -339,44 +341,44 @@ export const AlertDashboard: React.FC<AlertDashboardProps> = ({ className = '' }
           ) : (
             <div className='space-y-4'>
               {alerts.map(alert => (
-                <div key={alert.id} className='rounded-lg border border-gray-200 p-4'>
+                <div key={alert.id} className='rounded-lg border border-cli-gray bg-cli-dark p-4 transition-colors hover:bg-cli-gray'>
                   <div className='flex items-start justify-between'>
                     <div className='flex-1'>
                       <div className='flex items-center space-x-3'>
-                        <h4 className='font-semibold text-gray-900'>{alert.title}</h4>
+                        <h4 className='font-semibold text-cli-white'>{alert.title}</h4>
                         <span
-                          className={`rounded-full px-2 py-1 text-xs ${
+                          className={`rounded-full px-2 py-1 text-xs font-medium ${
                             alert.alertType === 'info'
-                              ? 'bg-blue-100 text-blue-800'
+                              ? 'bg-blue-900 text-blue-300 border border-blue-600'
                               : alert.alertType === 'warning'
-                                ? 'bg-yellow-100 text-yellow-800'
+                                ? 'bg-yellow-900 text-yellow-300 border border-yellow-600'
                                 : alert.alertType === 'error'
-                                  ? 'bg-red-100 text-red-800'
+                                  ? 'bg-red-900 text-red-300 border border-red-600'
                                   : alert.alertType === 'success'
-                                    ? 'bg-green-100 text-green-800'
-                                    : 'bg-purple-100 text-purple-800'
+                                    ? 'bg-green-900 text-green-300 border border-green-600'
+                                    : 'bg-purple-900 text-purple-300 border border-purple-600'
                           }`}
                         >
                           {alert.alertType}
                         </span>
                         <span
-                          className={`rounded-full px-2 py-1 text-xs ${
+                          className={`rounded-full px-2 py-1 text-xs font-medium ${
                             alert.priority === 'critical'
-                              ? 'bg-red-100 text-red-800'
+                              ? 'bg-red-900 text-red-300 border border-red-500 cli-glow'
                               : alert.priority === 'high'
-                                ? 'bg-orange-100 text-orange-800'
+                                ? 'bg-orange-900 text-orange-300 border border-orange-600'
                                 : alert.priority === 'normal'
-                                  ? 'bg-gray-100 text-gray-800'
-                                  : 'bg-gray-100 text-gray-600'
+                                  ? 'bg-cli-gray text-cli-light-gray border border-cli-gray'
+                                  : 'bg-cli-gray text-cli-light-gray border border-cli-gray'
                           }`}
                         >
                           {alert.priority}
                         </span>
                       </div>
 
-                      <p className='mt-1 text-gray-600'>{alert.message}</p>
+                      <p className='mt-1 text-cli-light-gray'>{alert.message}</p>
 
-                      <div className='mt-2 text-xs text-gray-500'>
+                      <div className='mt-2 text-xs text-cli-light-gray opacity-70'>
                         Created: {new Date(alert.createdAt).toLocaleString()}
                       </div>
                     </div>
@@ -387,14 +389,14 @@ export const AlertDashboard: React.FC<AlertDashboardProps> = ({ className = '' }
                           setSelectedAlert(alert);
                           setCurrentView('edit');
                         }}
-                        className='rounded bg-blue-50 px-3 py-1 text-xs text-blue-600 transition-colors hover:bg-blue-100'
+                        className='rounded border border-cli-amber bg-cli-dark px-3 py-1 text-xs text-cli-amber transition-colors hover:bg-cli-amber hover:text-cli-black'
                       >
                         Edit
                       </button>
 
                       <button
                         onClick={() => handleDeleteAlert(alert.id)}
-                        className='rounded bg-red-50 px-3 py-1 text-xs text-red-600 transition-colors hover:bg-red-100'
+                        className='rounded border border-red-500 bg-cli-dark px-3 py-1 text-xs text-red-400 transition-colors hover:bg-red-500 hover:text-white'
                       >
                         Delete
                       </button>
@@ -522,7 +524,7 @@ export const AlertDashboard: React.FC<AlertDashboardProps> = ({ className = '' }
   );
 
   return (
-    <div className={`min-h-screen bg-gray-50 py-6 ${className}`}>
+    <div className={`min-h-screen bg-cli-black py-6 ${className}`}>
       <div className='mx-auto max-w-7xl px-4 sm:px-6 lg:px-8'>
         {currentView === 'dashboard' && renderDashboard()}
 
