@@ -17,19 +17,44 @@ import { CliBadge, TerminalWindow, TypingText } from '../components/ui/CliCompon
 
 interface EmailTemplate {
   id: number;
-  template_name: string;
+  template_key: string;
+  template_name?: string;
   name: string;
+  display_name?: string;
   subject_template: string;
+  html_template?: string;
+  text_template?: string;
+  mjml_template?: string;
   description?: string;
   category_id?: number;
+  category_name?: string;
+  category_color?: string;
+  category_icon?: string;
+  variables?: any[];
+  tags?: string[];
+  usage_notes?: string;
   is_active: boolean;
+  is_system?: boolean;
+  supports_personalization?: boolean;
+  version?: number;
+  current_version_id?: string;
   created_at: string;
+  updated_at?: string;
+  created_by_username?: string;
+  updated_by_username?: string;
+  variable_count?: number;
+  total_sent?: number;
 }
 
 interface EmailCategory {
   id: number;
   name: string;
   description?: string;
+  color?: string;
+  icon?: string;
+  sort_order?: number;
+  is_active?: boolean;
+  template_count?: number;
 }
 
 const EmailTemplates: React.FC = () => {
