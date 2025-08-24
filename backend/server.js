@@ -83,6 +83,9 @@ import { createAnalyticsRoutes } from './routes/analyticsRoutes.js';
 // Import middleware
 import { authenticateToken } from './middleware/auth.js';
 
+// Import debug routes
+import debugUploadRoutes from './debug-upload.js';
+
 const app = express();
 const server = http.createServer(app);
 
@@ -447,6 +450,9 @@ app.use(
   iconManagementRoutes
 );
 
+// Add explicit CORS handling for upload endpoint
+app.options('/api/admin/apps/versions/upload', cors());
+
 // App Management Routes (Admin)
 app.use(
   '/api/admin/apps',
@@ -674,6 +680,9 @@ app.use(
     return adminRoutes(req, res, next);
   }
 );
+
+// Debug upload routes (temporary for debugging)
+app.use('/api/debug', debugUploadRoutes);
 
 // CORS test endpoint
 app.get('/api/cors-test', (req, res) => {
