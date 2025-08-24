@@ -323,30 +323,42 @@ class EmailService {
     const config = await this.getEmailConfiguration();
     const verificationUrl = `${config.frontend_url}/verify-email?token=${verificationToken}`;
 
-    return await this.sendEmail(user.email, 'Verify Your MockMate Account', 'email-verification', {
-      userName: user.first_name || user.name || 'User',
-      verificationUrl,
-      userEmail: user.email,
+    return await this.sendEmail(user.email, 'Verify Your MockMate Account', 'account-verification', {
+      USER_NAME: user.first_name || user.name || 'User',
+      USER_EMAIL: user.email,
+      VERIFICATION_URL: verificationUrl,
+      VERIFICATION_CODE: verificationToken.substring(0, 8).toUpperCase(),
+      EXPIRY_HOURS: '24',
     });
   }
 
   async sendWelcomeEmail(user) {
     const config = await this.getEmailConfiguration();
-    return await this.sendEmail(user.email, 'Welcome to MockMate! 🚀', 'welcome', {
-      userName: user.first_name || user.name || 'User',
-      userEmail: user.email,
-      loginUrl: `${config.frontend_url}/login`,
+    return await this.sendEmail(user.email, 'Welcome to MockMate! 🚀', 'welcome-onboarding', {
+      USER_NAME: user.first_name || user.name || 'User',
+      USER_EMAIL: user.email,
+      LOGIN_URL: `${config.frontend_url}/login`,
+      DASHBOARD_URL: `${config.frontend_url}/dashboard`,
+      SUPPORT_URL: `${config.frontend_url}/support`,
     });
   }
 
-  async sendPasswordResetEmail(user, resetToken) {
+  async sendPasswordResetEmail(user, resetToken, requestInfo = {}) {
     const config = await this.getEmailConfiguration();
     const resetUrl = `${config.frontend_url}/reset-password?token=${resetToken}`;
 
     return await this.sendEmail(user.email, 'Reset Your MockMate Password', 'password-reset', {
-      userName: user.first_name || user.name || 'User',
-      resetUrl,
-      userEmail: user.email,
+      USER_NAME: user.first_name || user.name || 'User',
+      USER_EMAIL: user.email,
+      RESET_URL: resetUrl,
+      EXPIRY_HOURS: '2',
+      REQUEST_TIMESTAMP: new Date().toISOString(),
+      REQUEST_IP: requestInfo.ip || 'Unknown',
+      REQUEST_LOCATION: requestInfo.location || 'Unknown',
+      REQUEST_USER_AGENT: requestInfo.userAgent || 'Unknown',
+      SECURITY_CONTACT_URL: `${config.frontend_url}/security`,
+      SUPPORT_URL: `${config.frontend_url}/support`,
+      WEBSITE_URL: config.frontend_url,
     });
   }
 
@@ -357,10 +369,139 @@ class EmailService {
       'Password Changed Successfully',
       'password-change-confirmation',
       {
-        userName: user.first_name || user.name || 'User',
-        userEmail: user.email,
-        changeTime: new Date().toISOString(),
-        supportUrl: `${config.frontend_url}/support`,
+        USER_NAME: user.first_name || user.name || 'User',
+        USER_EMAIL: user.email,
+        CHANGE_TIME: new Date().toISOString(),
+        SUPPORT_URL: `${config.frontend_url}/support`,
+        WEBSITE_URL: config.frontend_url,
+      }
+    );
+  }
+
+  // Billing Email Methods
+  async sendPaymentSuccessEmail(user, paymentDetails) {
+    const config = await this.getEmailConfiguration();
+    return await this.sendEmail(
+      user.email, 
+      'Payment Successful - MockMate', 
+      'billing-payment-success', 
+      {
+        USER_NAME: user.first_name || user.name || 'User',
+        USER_EMAIL: user.email,
+        PLAN_NAME: paymentDetails.planName || 'Premium Plan',
+        TOTAL_AMOUNT: paymentDetails.totalAmount || '0.00',
+        PLAN_AMOUNT: paymentDetails.planAmount || paymentDetails.totalAmount || '0.00',
+        BILLING_PERIOD: paymentDetails.billingPeriod || 'Monthly',
+        NEXT_BILLING_DATE: paymentDetails.nextBillingDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString(),
+        INVOICE_NUMBER: paymentDetails.invoiceNumber || `INV-${Date.now()}`,
+        TRANSACTION_ID: paymentDetails.transactionId || 'N/A',
+        PAYMENT_METHOD: paymentDetails.paymentMethod || 'Credit Card',
+        DOWNLOAD_INVOICE_URL: `${config.frontend_url}/billing/invoice/${paymentDetails.invoiceNumber || 'latest'}`,
+        MANAGE_BILLING_URL: `${config.frontend_url}/billing`,
+      }
+    );
+  }
+
+  async sendPaymentFailedEmail(user, failureDetails) {
+    const config = await this.getEmailConfiguration();
+    return await this.sendEmail(
+      user.email, 
+      'Payment Failed - Action Required', 
+      'billing-payment-failed', 
+      {
+        USER_NAME: user.first_name || user.name || 'User',
+        USER_EMAIL: user.email,
+        PLAN_NAME: failureDetails.planName || 'Premium Plan',
+        FAILURE_REASON: failureDetails.reason || 'Payment declined',
+        AMOUNT_FAILED: failureDetails.amount || '0.00',
+        ATTEMPT_DATE: failureDetails.attemptDate || new Date().toISOString(),
+        NEXT_RETRY_DATE: failureDetails.nextRetryDate || new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toLocaleDateString(),
+        GRACE_PERIOD_END: failureDetails.gracePeriodEnd || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString(),
+        UPDATE_PAYMENT_URL: `${config.frontend_url}/billing/payment-methods`,
+        RETRY_PAYMENT_URL: `${config.frontend_url}/billing/retry-payment`,
+      }
+    );
+  }
+
+  async sendSubscriptionExpiringEmail(user, subscriptionDetails) {
+    const config = await this.getEmailConfiguration();
+    const expiryDate = new Date(subscriptionDetails.expiryDate || Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const daysRemaining = Math.ceil((expiryDate - new Date()) / (1000 * 60 * 60 * 24));
+    
+    return await this.sendEmail(
+      user.email, 
+      'Subscription Expiring Soon', 
+      'billing-subscription-expiring', 
+      {
+        USER_NAME: user.first_name || user.name || 'User',
+        USER_EMAIL: user.email,
+        PLAN_NAME: subscriptionDetails.planName || 'Premium Plan',
+        EXPIRY_DATE: expiryDate.toLocaleDateString(),
+        DAYS_REMAINING: Math.max(0, daysRemaining).toString(),
+        PLAN_PRICE: subscriptionDetails.planPrice || '29.99',
+        RENEW_URL: `${config.frontend_url}/billing/renew`,
+        UPGRADE_URL: `${config.frontend_url}/billing/upgrade`,
+      }
+    );
+  }
+
+  async sendInterviewInvitationEmail(user, interviewDetails) {
+    const config = await this.getEmailConfiguration();
+    return await this.sendEmail(
+      user.email,
+      'Interview Invitation - MockMate',
+      'interview-invitation',
+      {
+        CANDIDATE_NAME: user.first_name || user.name || 'User',
+        USER_EMAIL: user.email,
+        COMPANY_NAME: interviewDetails.companyName || 'Company',
+        POSITION: interviewDetails.position || 'Position',
+        INTERVIEW_DATE: interviewDetails.date || new Date().toLocaleDateString(),
+        INTERVIEW_TIME: interviewDetails.time || '10:00 AM',
+        TIMEZONE: interviewDetails.timezone || 'EST',
+        DURATION: interviewDetails.duration || '60 minutes',
+        INTERVIEW_TYPE: interviewDetails.type || 'Video Interview',
+        INTERVIEWER_NAME: interviewDetails.interviewer?.name || 'Interviewer',
+        INTERVIEWER_TITLE: interviewDetails.interviewer?.title || 'Hiring Manager',
+        MEETING_LINK: interviewDetails.meetingLink || null,
+        CONFIRM_URL: `${config.frontend_url}/interview/confirm/${interviewDetails.id || 'invite'}`,
+        RESCHEDULE_URL: `${config.frontend_url}/interview/reschedule/${interviewDetails.id || 'invite'}`,
+        PRACTICE_URL: `${config.frontend_url}/practice`,
+        CONFIRM_BY_DATE: interviewDetails.confirmByDate || new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleDateString(),
+        COMPANY_CONTACT_EMAIL: interviewDetails.contactEmail || 'contact@company.com',
+        UNSUBSCRIBE_URL: `${config.frontend_url}/unsubscribe`,
+        SUPPORT_URL: `${config.frontend_url}/support`,
+        WEBSITE_URL: config.frontend_url,
+      }
+    );
+  }
+
+  async sendInterviewCompletionEmail(user, interviewResults) {
+    const config = await this.getEmailConfiguration();
+    return await this.sendEmail(
+      user.email,
+      'Interview Complete - Thank You!',
+      'interview-completion',
+      {
+        CANDIDATE_NAME: user.first_name || user.name || 'User',
+        USER_EMAIL: user.email,
+        COMPANY_NAME: interviewResults.companyName || 'Company',
+        INTERVIEW_DURATION: interviewResults.duration || '45',
+        HAS_SCORE: interviewResults.score ? true : false,
+        INTERVIEW_SCORE: interviewResults.score || '85',
+        TECHNICAL_FEEDBACK: interviewResults.feedback?.technical || 'Strong technical skills demonstrated.',
+        COMMUNICATION_FEEDBACK: interviewResults.feedback?.communication || 'Clear and articulate communication.',
+        PROBLEM_SOLVING_FEEDBACK: interviewResults.feedback?.problemSolving || 'Good analytical approach.',
+        IMPROVEMENT_AREAS: interviewResults.feedback?.improvements || 'Consider practicing more complex scenarios.',
+        QUESTIONS_ANSWERED: interviewResults.questionsAnswered || '8',
+        AVG_RESPONSE_TIME: interviewResults.avgResponseTime || '45',
+        CONFIDENCE_LEVEL: interviewResults.confidenceLevel || '7',
+        DETAILED_REPORT_URL: `${config.frontend_url}/interviews/${interviewResults.id || 'latest'}/report`,
+        PRACTICE_MORE_URL: `${config.frontend_url}/practice`,
+        COMPANY_CONTACT_EMAIL: interviewResults.contactEmail || 'contact@company.com',
+        UNSUBSCRIBE_URL: `${config.frontend_url}/unsubscribe`,
+        SUPPORT_URL: `${config.frontend_url}/support`,
+        WEBSITE_URL: config.frontend_url,
       }
     );
   }
