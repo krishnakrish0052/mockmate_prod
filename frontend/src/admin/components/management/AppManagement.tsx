@@ -195,21 +195,14 @@ const AppManagement: React.FC = () => {
       }
       // Use fetch instead of XMLHttpRequest for better CORS handling
       const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
+      const uploadUrl = `${apiBaseUrl}/admin/apps/versions/upload`;
       
-      // TEMPORARY: Use small test upload to isolate CORS vs size issues
-      const uploadUrl = `${apiBaseUrl}/admin/apps/test-small-upload`;
+      console.log('🚀 Starting upload to:', uploadUrl);
+      console.log('📁 File size:', uploadForm.file?.size, 'bytes');
+      console.log('📁 File name:', uploadForm.file?.name);
       
-      console.log('🚀 Starting SMALL TEST upload to:', uploadUrl);
-      console.log('🚀 This is a temporary test to isolate CORS issues');
-      
-      // For the test, just send a small JSON payload instead of FormData
-      const testData = {
-        test: true,
-        message: 'Testing CORS without large file',
-        timestamp: new Date().toISOString(),
-        fileSize: uploadForm.file?.size || 0,
-        fileName: uploadForm.file?.name || 'none'
-      };
+      // Create AbortController for cancellable upload
+      const abortController = new AbortController();
       
       const response = await fetch(uploadUrl, {
         method: 'POST',
@@ -218,7 +211,20 @@ const AppManagement: React.FC = () => {
           // Don't set Content-Type - let browser set it with boundary for FormData
         },
         body: formData,
+        signal: abortController.signal,
       });
+      
+      // Simulate progress since fetch doesn't support upload progress natively
+      const fileSize = uploadForm.file.size;
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => {
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return prev;
+          }
+          return prev + Math.random() * 10;
+        });
+      }, 200);
       
       console.log('📡 Upload response status:', response.status);
       console.log('📡 Upload response headers:', Object.fromEntries(response.headers.entries()));
