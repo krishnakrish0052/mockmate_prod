@@ -13,7 +13,36 @@ export const loadIconConfig = async () => {
   }
 
   try {
-    const response = await fetch('/api/config/icons');
+    // Use environment variable for API base URL, fallback to relative path for dev
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
+    const iconConfigUrl = `${apiBaseUrl}/config/icons`;
+    
+    console.log('Loading icon config from:', iconConfigUrl);
+    
+    const response = await fetch(iconConfigUrl, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      // Add timeout to prevent hanging requests
+      signal: AbortSignal.timeout(10000), // 10 second timeout
+    });
+
+    // Check if response is actually JSON
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      console.warn('Icon config endpoint returned non-JSON response, using defaults');
+      const defaultConfig = getDefaultIconConfig();
+      iconConfig = defaultConfig;
+      configLoaded = true;
+      return iconConfig;
+    }
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
     const data = await response.json();
 
     if (data.success) {
@@ -22,11 +51,18 @@ export const loadIconConfig = async () => {
       return iconConfig;
     } else {
       console.warn('Failed to load icon config:', data.message);
-      return getDefaultIconConfig();
+      const defaultConfig = getDefaultIconConfig();
+      iconConfig = defaultConfig;
+      configLoaded = true;
+      return iconConfig;
     }
   } catch (error) {
-    console.error('Error loading icon config:', error);
-    return getDefaultIconConfig();
+    console.warn('Error loading icon config, using defaults:', error.message);
+    // Always return default config instead of throwing
+    const defaultConfig = getDefaultIconConfig();
+    iconConfig = defaultConfig;
+    configLoaded = true;
+    return iconConfig;
   }
 };
 
