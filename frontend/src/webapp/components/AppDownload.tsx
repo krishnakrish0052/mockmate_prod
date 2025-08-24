@@ -203,7 +203,7 @@ const AppDownload: React.FC = () => {
     const link = document.createElement('a');
     const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
     link.href = `${apiBaseUrl}/api/apps/download/${versionId}`;
-    link.download = `mockmate-${platform.toLowerCase()}.pkg`;
+    // Don't set link.download to let the server's Content-Disposition header determine the filename
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

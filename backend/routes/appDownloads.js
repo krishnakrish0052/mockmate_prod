@@ -234,8 +234,12 @@ router.get(
       );
 
       // Set appropriate headers for download with proper MIME types
-      const fileName = version.display_name || version.file_name;
-      const fileExt = path.extname(fileName).toLowerCase();
+      // Always use the original filename for downloads to preserve proper extensions
+      const originalFileName = version.file_name; // This has the correct extension
+      const originalExt = path.extname(originalFileName || '').toLowerCase();
+      
+      // Use original filename for download - this ensures proper extension is preserved
+      const finalDownloadName = originalFileName || 'app-download.exe';
       
       // Map file extensions to proper MIME types
       const mimeTypes = {
@@ -250,9 +254,9 @@ router.get(
         '.tar.gz': 'application/gzip'
       };
       
-      const contentType = mimeTypes[fileExt] || 'application/octet-stream';
+      const contentType = mimeTypes[originalExt] || 'application/octet-stream';
       
-      res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+      res.setHeader('Content-Disposition', `attachment; filename="${finalDownloadName}"`);
       res.setHeader('Content-Type', contentType);
       res.setHeader('Content-Length', version.file_size);
       res.setHeader('X-File-Hash', version.file_hash);
