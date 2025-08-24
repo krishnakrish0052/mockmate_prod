@@ -251,6 +251,66 @@ router.delete('/:id', adminAuth, async (req, res) => {
 });
 
 /**
+ * GET /api/admin/alerts/analytics/summary
+ * Get overall alert system analytics (admin only)
+ */
+router.get('/analytics/summary', adminAuth, async (req, res) => {
+  try {
+    if (!req.app.locals.alertService) {
+      return res.status(503).json({
+        error: 'Alert service not available',
+        message: 'The alert service is currently unavailable. Please try again later.',
+      });
+    }
+
+    const analytics = await req.app.locals.alertService.getAlertAnalytics();
+
+    res.json({
+      success: true,
+      data: analytics,
+    });
+  } catch (error) {
+    logger.error('Failed to get alert analytics summary', {
+      error: error.message,
+      adminId: req.admin?.id,
+    });
+    res.status(500).json({
+      error: 'Failed to retrieve analytics',
+      message: 'An error occurred while fetching alert analytics.',
+    });
+  }
+});
+
+/**
+ * GET /api/admin/alerts/templates
+ * Get alert templates (admin only)
+ */
+router.get('/templates', adminAuth, async (req, res) => {
+  try {
+    if (!req.app.locals.alertService) {
+      return res.status(503).json({
+        error: 'Alert service not available',
+        message: 'The alert service is currently unavailable. Please try again later.',
+      });
+    }
+
+    const templates = await req.app.locals.alertService.getAlertTemplates();
+
+    res.json({
+      success: true,
+      data: templates,
+      count: templates.length,
+    });
+  } catch (error) {
+    logger.error('Failed to get alert templates', { error: error.message, adminId: req.admin?.id });
+    res.status(500).json({
+      error: 'Failed to retrieve templates',
+      message: 'An error occurred while fetching alert templates.',
+    });
+  }
+});
+
+/**
  * GET /api/admin/alerts/:id
  * Get a specific alert with full details (admin only)
  */
@@ -321,66 +381,6 @@ router.get('/:id/analytics', adminAuth, async (req, res) => {
     res.status(500).json({
       error: 'Failed to retrieve analytics',
       message: 'An error occurred while fetching alert analytics.',
-    });
-  }
-});
-
-/**
- * GET /api/admin/alerts/analytics/summary
- * Get overall alert system analytics (admin only)
- */
-router.get('/analytics/summary', adminAuth, async (req, res) => {
-  try {
-    if (!req.app.locals.alertService) {
-      return res.status(503).json({
-        error: 'Alert service not available',
-        message: 'The alert service is currently unavailable. Please try again later.',
-      });
-    }
-
-    const analytics = await req.app.locals.alertService.getAlertAnalytics();
-
-    res.json({
-      success: true,
-      data: analytics,
-    });
-  } catch (error) {
-    logger.error('Failed to get alert analytics summary', {
-      error: error.message,
-      adminId: req.admin?.id,
-    });
-    res.status(500).json({
-      error: 'Failed to retrieve analytics',
-      message: 'An error occurred while fetching alert analytics.',
-    });
-  }
-});
-
-/**
- * GET /api/admin/alerts/templates
- * Get alert templates (admin only)
- */
-router.get('/templates', adminAuth, async (req, res) => {
-  try {
-    if (!req.app.locals.alertService) {
-      return res.status(503).json({
-        error: 'Alert service not available',
-        message: 'The alert service is currently unavailable. Please try again later.',
-      });
-    }
-
-    const templates = await req.app.locals.alertService.getAlertTemplates();
-
-    res.json({
-      success: true,
-      data: templates,
-      count: templates.length,
-    });
-  } catch (error) {
-    logger.error('Failed to get alert templates', { error: error.message, adminId: req.admin?.id });
-    res.status(500).json({
-      error: 'Failed to retrieve templates',
-      message: 'An error occurred while fetching alert templates.',
     });
   }
 });

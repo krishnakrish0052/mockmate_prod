@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import axios from 'axios';
 import { CliButton } from '../ui/CliComponents';
 
 interface StripePaymentFormProps {
@@ -72,25 +73,16 @@ const StripePaymentForm: React.FC<StripePaymentFormProps> = ({
         // Immediately process the payment on the backend to add credits
         try {
           console.log('🔄 Processing payment on backend...');
-          const processResponse = await fetch('/api/payments/process-payment-success', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${localStorage.getItem('token')}`,
-            },
-            body: JSON.stringify({
-              paymentIntentId: confirmedPayment.id
-            })
+          const processResult = await axios.post('/payments/process-payment-success', {
+            paymentIntentId: confirmedPayment.id
           });
           
-          const processResult = await processResponse.json();
-          
-          if (processResult.success) {
-            console.log('✅ Credits added successfully:', processResult.creditsAdded);
+          if (processResult.data.success) {
+            console.log('✅ Credits added successfully:', processResult.data.creditsAdded);
             onSuccess();
           } else {
-            console.error('❌ Failed to process payment on backend:', processResult);
-            onError(`Payment succeeded but failed to add credits: ${processResult.message || processResult.error}`);
+            console.error('❌ Failed to process payment on backend:', processResult.data);
+            onError(`Payment succeeded but failed to add credits: ${processResult.data.message || processResult.data.error}`);
           }
         } catch (processError) {
           console.error('❌ Error processing payment on backend:', processError);
