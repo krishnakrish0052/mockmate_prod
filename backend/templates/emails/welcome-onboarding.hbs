@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to MockMate - MockMate</title>
+    <style>
+        /* Reset styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Terminal theme styles */
+        body {
+            font-family: 'Courier New', 'Monaco', 'Lucida Console', monospace;
+            background-color: #0a0a0a;
+            color: #00ff41;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+        }
+
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #111111;
+            border: 2px solid #00ff41;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.3);
+        }
+
+        .terminal-header {
+            background-color: #1a1a1a;
+            padding: 10px 15px;
+            border-bottom: 1px solid #00ff41;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .terminal-buttons {
+            display: flex;
+            gap: 6px;
+        }
+
+        .terminal-button {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .btn-close { background-color: #ff5f56; }
+        .btn-minimize { background-color: #ffbd2e; }
+        .btn-maximize { background-color: #27ca3f; }
+
+        .terminal-title {
+            color: #00ff41;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+
+        .terminal-content {
+            padding: 30px;
+            background-color: #0a0a0a;
+        }
+
+        .terminal-prompt {
+            color: #00ff41;
+            font-weight: bold;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .terminal-prompt::before {
+            content: "$ ";
+            color: #00ff41;
+        }
+
+        h1, h2, h3 {
+            color: #00ff41;
+            margin-bottom: 15px;
+            font-family: 'Courier New', monospace;
+        }
+
+        h1 {
+            font-size: 24px;
+            text-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
+        }
+
+        h2 {
+            font-size: 20px;
+            color: #33ff66;
+        }
+
+        h3 {
+            font-size: 18px;
+            color: #66ff99;
+        }
+
+        p {
+            margin-bottom: 15px;
+            color: #cccccc;
+            font-size: 14px;
+        }
+
+        .highlight-text {
+            color: #00ff41;
+            font-weight: bold;
+            background-color: rgba(0, 255, 65, 0.1);
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+
+        .terminal-button-link {
+            display: inline-block;
+            background-color: transparent;
+            color: #00ff41;
+            border: 2px solid #00ff41;
+            padding: 12px 24px;
+            text-decoration: none;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 4px;
+            margin: 15px 0;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .terminal-button-link:hover {
+            background-color: #00ff41;
+            color: #0a0a0a;
+            box-shadow: 0 0 15px rgba(0, 255, 65, 0.7);
+        }
+
+        .code-block {
+            background-color: #1a1a1a;
+            border: 1px solid #333;
+            border-left: 4px solid #00ff41;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #cccccc;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+
+        .terminal-info {
+            background-color: rgba(0, 255, 65, 0.1);
+            border: 1px solid #00ff41;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .feature-list li {
+            color: #cccccc;
+            margin-bottom: 10px;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .feature-list li::before {
+            content: "✓";
+            color: #00ff41;
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+        }
+
+        .terminal-footer {
+            background-color: #1a1a1a;
+            padding: 20px 30px;
+            border-top: 1px solid #333;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .terminal-footer a {
+            color: #00ff41;
+            text-decoration: none;
+        }
+
+        .terminal-footer a:hover {
+            text-decoration: underline;
+        }
+
+        .ascii-art {
+            font-family: monospace;
+            white-space: pre;
+            color: #00ff41;
+            text-align: center;
+            margin: 20px 0;
+            font-size: 10px;
+            line-height: 1;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-success { background-color: #00ff41; }
+        .status-warning { background-color: #ffa500; }
+        .status-error { background-color: #ff4444; }
+
+        /* Responsive styles */
+        @media only screen and (max-width: 600px) {
+            .email-container {
+                margin: 10px;
+                border-radius: 4px;
+            }
+            
+            .terminal-content {
+                padding: 20px;
+            }
+            
+            .terminal-header {
+                padding: 8px 12px;
+            }
+            
+            h1 { font-size: 20px; }
+            h2 { font-size: 18px; }
+            h3 { font-size: 16px; }
+            
+            .terminal-button-link {
+                padding: 10px 20px;
+                font-size: 12px;
+            }
+        }
+
+        /* Dark mode email client compatibility */
+        [data-ogsc] .email-container {
+            background-color: #111111 !important;
+        }
+        
+        [data-ogsc] .terminal-content {
+            background-color: #0a0a0a !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <!-- Terminal Header -->
+        <div class="terminal-header">
+            <div class="terminal-buttons">
+                <div class="terminal-button btn-close"></div>
+                <div class="terminal-button btn-minimize"></div>
+                <div class="terminal-button btn-maximize"></div>
+            </div>
+            <div class="terminal-title">MockMate Terminal - Welcome Aboard!</div>
+        </div>
+
+        <!-- Terminal Content -->
+        <div class="terminal-content">
+            <div class="terminal-prompt">mockmate@system:~$</div>
+            
+            <div class="ascii-art">
+██╗    ██╗███████╗██╗      ██████╗ ██████╗ ███╗   ███╗███████╗
+██║    ██║██╔════╝██║     ██╔════╝██╔═══██╗████╗ ████║██╔════╝
+██║ █╗ ██║█████╗  ██║     ██║     ██║   ██║██╔████╔██║█████╗  
+██║███╗██║██╔══╝  ██║     ██║     ██║   ██║██║╚██╔╝██║██╔══╝  
+╚███╔███╔╝███████╗███████╗╚██████╗╚██████╔╝██║ ╚═╝ ██║███████╗
+ ╚══╝╚══╝ ╚══════╝╚══════╝ ╚═════╝ ╚═════╝ ╚═╝     ╚═╝╚══════╝
+            </div>
+
+            <h1>Welcome to MockMate! 🚀</h1>
+            
+            <p>Hello <span class="highlight-text">{{userName}}</span>,</p>
+            
+            <p>Congratulations! Your MockMate account has been successfully created and verified. You're now part of the next generation of interview preparation technology.</p>
+
+            <div class="terminal-info">
+                <h3>🎯 Account Activated:</h3>
+                <p><strong>Email:</strong> {{userEmail}}</p>
+                <p><strong>Status:</strong> <span class="highlight-text">ACTIVE</span></p>
+                <p><strong>Member Since:</strong> {{currentYear}}</p>
+            </div>
+
+            <h2>What's Available Now:</h2>
+            <ul class="feature-list">
+                <li><strong>AI-Powered Mock Interviews:</strong> Practice with realistic interview scenarios</li>
+                <li><strong>Performance Analytics:</strong> Get detailed insights into your responses</li>
+                <li><strong>Industry-Specific Questions:</strong> Target your practice for your field</li>
+                <li><strong>Real-time Feedback:</strong> Improve your skills with instant suggestions</li>
+                <li><strong>Progress Tracking:</strong> Monitor your improvement over time</li>
+                <li><strong>Custom Interview Types:</strong> Technical, behavioral, and more</li>
+            </ul>
+
+            <div class="code-block">
+# Quick start commands:
+mockmate login --dashboard
+mockmate interview --start
+mockmate analytics --view-progress
+# Ready to begin your journey?
+            </div>
+
+            <center>
+                <a href="{{loginUrl}}" class="terminal-button-link">
+                    ACCESS DASHBOARD
+                </a>
+            </center>
+
+            <h2>Next Steps:</h2>
+            <p><span class="highlight-text">1.</span> Complete your profile setup</p>
+            <p><span class="highlight-text">2.</span> Take your first practice interview</p>
+            <p><span class="highlight-text">3.</span> Review your performance analytics</p>
+            <p><span class="highlight-text">4.</span> Set up your practice schedule</p>
+
+            <div class="terminal-info">
+                <h3>💡 Pro Tip:</h3>
+                <p>Start with a behavioral interview to get familiar with our platform, then move to technical interviews specific to your field.</p>
+            </div>
+
+            <h2>Need Help Getting Started?</h2>
+            <p>Our support team is here to help you make the most of MockMate:</p>
+            <ul style="color: #cccccc; margin-left: 20px; margin-bottom: 15px;">
+                <li>📚 Check out our comprehensive guides</li>
+                <li>💬 Join our community discussions</li>
+                <li>🎥 Watch tutorial videos</li>
+                <li>📧 Contact our support team</li>
+            </ul>
+
+            <p>We're excited to be part of your interview preparation journey!</p>
+            <p><strong>Happy practicing,</strong><br><strong>The MockMate Team</strong></p>
+        </div>
+
+        <!-- Terminal Footer -->
+        <div class="terminal-footer">
+            <p>
+                <span class="status-indicator status-success"></span>
+                System Status: Online | 
+                <a href="{{baseUrl}}">MockMate Dashboard</a> | 
+                <a href="{{baseUrl}}/support">Support</a> |
+                <a href="{{baseUrl}}/tutorials">Tutorials</a>
+            </p>
+            <p style="margin-top: 10px; font-size: 11px;">
+                © {{currentYear}} MockMate. All rights reserved.<br>
+                This email was sent from an automated system. Please do not reply to this email.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

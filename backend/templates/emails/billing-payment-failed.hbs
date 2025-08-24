@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Failed - Action Required - MockMate</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Courier New', monospace; background-color: #0a0a0a; color: #ff4444; line-height: 1.6; }
+        .email-container { max-width: 600px; margin: 0 auto; background-color: #111111; border: 2px solid #ff4444; border-radius: 8px; box-shadow: 0 0 20px rgba(255, 68, 68, 0.3); }
+        .terminal-header { background-color: #1a1a1a; padding: 10px 15px; border-bottom: 1px solid #ff4444; display: flex; align-items: center; gap: 8px; }
+        .terminal-buttons { display: flex; gap: 6px; }
+        .terminal-button { width: 12px; height: 12px; border-radius: 50%; }
+        .btn-close { background-color: #ff5f56; } .btn-minimize { background-color: #ffbd2e; } .btn-maximize { background-color: #27ca3f; }
+        .terminal-title { color: #ff4444; font-size: 14px; margin-left: 10px; }
+        .terminal-content { padding: 30px; background-color: #0a0a0a; }
+        .terminal-prompt { color: #ff4444; font-weight: bold; margin-bottom: 15px; font-size: 16px; }
+        .terminal-prompt::before { content: "$ "; color: #ff4444; }
+        h1 { color: #ff4444; font-size: 24px; text-shadow: 0 0 10px rgba(255, 68, 68, 0.5); margin-bottom: 15px; }
+        h3 { color: #ffaaaa; font-size: 18px; margin-bottom: 15px; }
+        p { margin-bottom: 15px; color: #cccccc; font-size: 14px; }
+        .highlight-text { color: #ff4444; font-weight: bold; background-color: rgba(255, 68, 68, 0.1); padding: 2px 4px; border-radius: 3px; }
+        .terminal-info { background-color: rgba(255, 68, 68, 0.1); border: 1px solid #ff4444; padding: 15px; margin: 20px 0; border-radius: 4px; }
+        .terminal-button-link { display: inline-block; background-color: transparent; color: #ff4444; border: 2px solid #ff4444; padding: 12px 24px; text-decoration: none; font-family: 'Courier New', monospace; font-size: 14px; font-weight: bold; border-radius: 4px; margin: 15px 0; transition: all 0.3s ease; text-transform: uppercase; letter-spacing: 1px; }
+        .terminal-footer { background-color: #1a1a1a; padding: 20px 30px; border-top: 1px solid #333; text-align: center; font-size: 12px; color: #666; }
+        .status-indicator { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; }
+        .status-error { background-color: #ff4444; }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="terminal-header">
+            <div class="terminal-buttons"><div class="terminal-button btn-close"></div><div class="terminal-button btn-minimize"></div><div class="terminal-button btn-maximize"></div></div>
+            <div class="terminal-title">MockMate Terminal - Payment Failed</div>
+        </div>
+        <div class="terminal-content">
+            <div class="terminal-prompt">mockmate@billing:~$</div>
+            <h1>❌ Payment Failed</h1>
+            <p>Hello <span class="highlight-text">{{USER_NAME}}</span>,</p>
+            <div class="terminal-info">
+                <h3>💳 Payment Failure Details:</h3>
+                <p><strong>Plan:</strong> {{PLAN_NAME}}</p>
+                <p><strong>Failed Amount:</strong> ${{AMOUNT_FAILED}}</p>
+                <p><strong>Reason:</strong> {{FAILURE_REASON}}</p>
+                <p><strong>Attempt Date:</strong> {{ATTEMPT_DATE}}</p>
+                <p><strong>Next Retry:</strong> {{NEXT_RETRY_DATE}}</p>
+                <p><strong>Grace Period Ends:</strong> {{GRACE_PERIOD_END}}</p>
+            </div>
+            <p>We were unable to process your payment for your MockMate {{PLAN_NAME}} subscription. Your account remains active during the grace period.</p>
+            <p><strong>Action Required:</strong> Please update your payment method or retry the payment to avoid service interruption.</p>
+            <center>
+                <a href="{{UPDATE_PAYMENT_URL}}" class="terminal-button-link">Update Payment</a>
+                <a href="{{RETRY_PAYMENT_URL}}" class="terminal-button-link">Retry Payment</a>
+            </center>
+            <p><strong>The MockMate Team</strong></p>
+        </div>
+        <div class="terminal-footer">
+            <p><span class="status-indicator status-error"></span>Payment Status: Failed | <a href="https://mock-mate.com" style="color: #ff4444;">MockMate Dashboard</a> | <a href="https://mock-mate.com/support" style="color: #ff4444;">Support</a></p>
+            <p style="margin-top: 10px; font-size: 11px;">© 2025 MockMate. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>
