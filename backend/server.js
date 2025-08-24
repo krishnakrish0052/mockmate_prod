@@ -511,15 +511,44 @@ app.get('/api/admin/email-templates/:id', adminAuth, async (req, res) => {
       throw new Error('Database not initialized');
     }
 
-    const query = `
-      SELECT id, template_name, template_name as name, subject as subject_template,
-             template_content as html_template, usage_notes as description, 
-             category_id, is_active, created_at, updated_at
-      FROM email_templates
-      WHERE id = $1 OR template_name = $1
-    `;
+    // Try to determine if ID is numeric or UUID
+    const isNumeric = /^\d+$/.test(id);
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 
-    const result = await database.query(query, [id]);
+    let query, queryParams;
+    if (isNumeric) {
+      // Search by numeric ID
+      query = `
+        SELECT id, template_name, template_name as name, subject as subject_template,
+               template_content as html_template, usage_notes as description, 
+               category_id, is_active, created_at, updated_at
+        FROM email_templates
+        WHERE id = $1
+      `;
+      queryParams = [parseInt(id)];
+    } else if (isUUID) {
+      // Search by UUID (if the ID column is UUID type)
+      query = `
+        SELECT id, template_name, template_name as name, subject as subject_template,
+               template_content as html_template, usage_notes as description, 
+               category_id, is_active, created_at, updated_at
+        FROM email_templates
+        WHERE id::text = $1
+      `;
+      queryParams = [id];
+    } else {
+      // Search by template name
+      query = `
+        SELECT id, template_name, template_name as name, subject as subject_template,
+               template_content as html_template, usage_notes as description, 
+               category_id, is_active, created_at, updated_at
+        FROM email_templates
+        WHERE template_name = $1
+      `;
+      queryParams = [id];
+    }
+
+    const result = await database.query(query, queryParams);
 
     if (result.rows.length === 0) {
       return res.status(404).json({
