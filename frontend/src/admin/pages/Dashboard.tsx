@@ -83,9 +83,10 @@ const Dashboard: React.FC = () => {
   const fetchDashboardData = async () => {
     try {
       const token = localStorage.getItem('admin_token');
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
       // Fetch real data from the analytics overview API
-      const response = await fetch('/api/admin/analytics/overview', {
+      const response = await fetch(`${apiBaseUrl}/admin/analytics/overview`, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
