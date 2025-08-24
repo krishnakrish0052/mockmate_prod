@@ -28,9 +28,12 @@ export const AlertDashboard: React.FC<AlertDashboardProps> = ({ className = '' }
     try {
       const filtersToUse = newFilters || filters;
       const response = await alertService.getAdminAlerts(filtersToUse);
-      setAlerts(response.alerts);
-      setTotal(response.total);
+      setAlerts(response?.alerts || []);
+      setTotal(response?.total || 0);
     } catch (error) {
+      console.error('Error loading alerts:', error);
+      setAlerts([]);
+      setTotal(0);
       setError(error instanceof Error ? error.message : 'Failed to load alerts');
     } finally {
       setLoading(false);
@@ -149,7 +152,7 @@ export const AlertDashboard: React.FC<AlertDashboardProps> = ({ className = '' }
 
           <div className='rounded-lg border border-cli-gray bg-cli-darker p-4 shadow-cli-border'>
             <div className='text-2xl font-bold text-red-400'>
-              {analytics.typeBreakdown.critical || 0}
+              {analytics?.typeBreakdown?.critical || 0}
             </div>
             <div className='text-sm text-cli-light-gray'>Critical Alerts</div>
           </div>
@@ -458,7 +461,7 @@ export const AlertDashboard: React.FC<AlertDashboardProps> = ({ className = '' }
             <div className='rounded-lg border bg-white p-6 shadow'>
               <h3 className='text-sm font-medium text-gray-500'>Critical Alerts</h3>
               <p className='text-3xl font-bold text-red-600'>
-                {analytics.priorityBreakdown.critical || 0}
+                {analytics?.priorityBreakdown?.critical || 0}
               </p>
             </div>
           </div>
@@ -468,7 +471,7 @@ export const AlertDashboard: React.FC<AlertDashboardProps> = ({ className = '' }
             <div className='rounded-lg border bg-white p-6 shadow'>
               <h3 className='mb-4 text-lg font-semibold text-gray-900'>Alert Types</h3>
               <div className='space-y-3'>
-                {Object.entries(analytics.typeBreakdown).map(([type, count]) => (
+                {analytics?.typeBreakdown && Object.entries(analytics.typeBreakdown).map(([type, count]) => (
                   <div key={type} className='flex items-center justify-between'>
                     <span className='capitalize text-gray-700'>{type}</span>
                     <span className='font-medium text-gray-900'>{count}</span>
@@ -480,7 +483,7 @@ export const AlertDashboard: React.FC<AlertDashboardProps> = ({ className = '' }
             <div className='rounded-lg border bg-white p-6 shadow'>
               <h3 className='mb-4 text-lg font-semibold text-gray-900'>Priority Levels</h3>
               <div className='space-y-3'>
-                {Object.entries(analytics.priorityBreakdown).map(([priority, count]) => (
+                {analytics?.priorityBreakdown && Object.entries(analytics.priorityBreakdown).map(([priority, count]) => (
                   <div key={priority} className='flex items-center justify-between'>
                     <span className='capitalize text-gray-700'>{priority}</span>
                     <span className='font-medium text-gray-900'>{count}</span>
