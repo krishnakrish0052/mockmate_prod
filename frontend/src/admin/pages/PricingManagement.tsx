@@ -109,7 +109,8 @@ const PricingManagement: React.FC = () => {
 
   const fetchCreditPackages = async () => {
     try {
-      const response = await fetch('/api/admin/pricing-management/packages', {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${apiBaseUrl}/admin/pricing-management/packages`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('admin_token')}`,
           'Content-Type': 'application/json',
@@ -143,7 +144,8 @@ const PricingManagement: React.FC = () => {
 
   const fetchSubscriptionPlans = async () => {
     try {
-      const response = await fetch('/api/admin/pricing-management/plans', {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${apiBaseUrl}/admin/pricing-management/plans`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('admin_token')}`,
           'Content-Type': 'application/json',
@@ -190,9 +192,10 @@ const PricingManagement: React.FC = () => {
   const savePackage = async () => {
     setSaving(true);
     try {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
       const url = editingPackage
-        ? `/api/admin/pricing-management/packages/${editingPackage.id}`
-        : '/api/admin/pricing-management/packages';
+        ? `${apiBaseUrl}/admin/pricing-management/packages/${editingPackage.id}`
+        : `${apiBaseUrl}/admin/pricing-management/packages`;
 
       const method = editingPackage ? 'PUT' : 'POST';
 
@@ -249,7 +252,8 @@ const PricingManagement: React.FC = () => {
 
   const togglePackageStatus = async (id: string, isActive: boolean) => {
     try {
-      const response = await fetch(`/api/admin/pricing-management/packages/${id}`, {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${apiBaseUrl}/admin/pricing-management/packages/${id}`, {
         method: 'PUT',
         headers: {
           Authorization: `Bearer ${localStorage.getItem('admin_token')}`,
@@ -270,7 +274,8 @@ const PricingManagement: React.FC = () => {
     if (!confirm('Are you sure you want to delete this credit package?')) return;
 
     try {
-      const response = await fetch(`/api/admin/pricing-management/packages/${id}`, {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${apiBaseUrl}/admin/pricing-management/packages/${id}`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${localStorage.getItem('admin_token')}`,
@@ -327,9 +332,10 @@ const PricingManagement: React.FC = () => {
   const savePlan = async () => {
     setSaving(true);
     try {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
       const url = editingPlan
-        ? `/api/admin/pricing-management/plans/${editingPlan.id}`
-        : '/api/admin/pricing-management/plans';
+        ? `${apiBaseUrl}/admin/pricing-management/plans/${editingPlan.id}`
+        : `${apiBaseUrl}/admin/pricing-management/plans`;
 
       const method = editingPlan ? 'PUT' : 'POST';
 
@@ -390,7 +396,8 @@ const PricingManagement: React.FC = () => {
 
   const togglePlanStatus = async (id: string, isActive: boolean) => {
     try {
-      const response = await fetch(`/api/admin/pricing-management/plans/${id}`, {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${apiBaseUrl}/admin/pricing-management/plans/${id}`, {
         method: 'PUT',
         headers: {
           Authorization: `Bearer ${localStorage.getItem('admin_token')}`,
@@ -411,7 +418,8 @@ const PricingManagement: React.FC = () => {
     if (!confirm('Are you sure you want to delete this subscription plan?')) return;
 
     try {
-      const response = await fetch(`/api/admin/pricing-management/plans/${id}`, {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${apiBaseUrl}/admin/pricing-management/plans/${id}`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${localStorage.getItem('admin_token')}`,

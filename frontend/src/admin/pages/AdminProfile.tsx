@@ -70,7 +70,8 @@ const AdminProfile: React.FC = () => {
   const fetchProfile = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/admin-profile/me', {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${apiBaseUrl}/admin-profile/me`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('admin_token')}`,
           'Content-Type': 'application/json',
@@ -116,7 +117,8 @@ const AdminProfile: React.FC = () => {
         notificationPreferences: profileForm.notificationSettings,
       };
 
-      const response = await fetch('/api/admin-profile/me', {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${apiBaseUrl}/admin-profile/me`, {
         method: 'PUT',
         headers: {
           Authorization: `Bearer ${localStorage.getItem('admin_token')}`,
@@ -160,7 +162,8 @@ const AdminProfile: React.FC = () => {
 
     setSaving(true);
     try {
-      const response = await fetch('/api/admin-profile/me/change-password', {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${apiBaseUrl}/admin-profile/me/change-password`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${localStorage.getItem('admin_token')}`,
@@ -202,7 +205,8 @@ const AdminProfile: React.FC = () => {
   const toggle2FA = async () => {
     setSaving(true);
     try {
-      const response = await fetch('/api/admin-profile/2fa', {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${apiBaseUrl}/admin-profile/2fa`, {
         method: 'PATCH',
         headers: {
           Authorization: `Bearer ${localStorage.getItem('admin_token')}`,

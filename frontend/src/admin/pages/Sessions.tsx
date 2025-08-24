@@ -143,7 +143,8 @@ const Sessions: React.FC = () => {
         ...filters,
       });
 
-      const response = await fetch(`/api/admin/sessions?${params}`, {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${apiBaseUrl}/admin/sessions?${params}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -169,7 +170,8 @@ const Sessions: React.FC = () => {
         throw new Error('No authentication token');
       }
 
-      const response = await fetch(`/api/admin/sessions/${sessionId}`, {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${apiBaseUrl}/admin/sessions/${sessionId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 

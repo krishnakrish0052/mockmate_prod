@@ -105,7 +105,8 @@ const Revenue: React.FC = () => {
     setError(null);
 
     try {
-      const response = await fetch(`/api/admin/analytics/revenue?period=${period}`, {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${apiBaseUrl}/admin/analytics/revenue?period=${period}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('admin_token')}`,
           'Content-Type': 'application/json',
@@ -132,7 +133,8 @@ const Revenue: React.FC = () => {
 
   const exportReport = async (format: 'csv' | 'pdf') => {
     try {
-      const response = await fetch('/api/admin/analytics/export', {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${apiBaseUrl}/admin/analytics/export`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${localStorage.getItem('admin_token')}`,

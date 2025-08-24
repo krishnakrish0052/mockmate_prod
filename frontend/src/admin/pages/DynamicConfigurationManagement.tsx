@@ -91,7 +91,8 @@ const DynamicConfigurationManagement: React.FC = () => {
   const fetchConfigurations = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/admin/dynamic-config?include_sensitive=true', {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${apiBaseUrl}/admin/dynamic-config?include_sensitive=true`, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -121,7 +122,8 @@ const DynamicConfigurationManagement: React.FC = () => {
 
   const saveConfiguration = async (key: string, value: any, reason?: string) => {
     try {
-      const response = await fetch(`/api/admin/dynamic-config/${key}`, {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${apiBaseUrl}/admin/dynamic-config/${key}`, {
         method: 'PUT',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -170,7 +172,8 @@ const DynamicConfigurationManagement: React.FC = () => {
     }));
 
     try {
-      const response = await fetch('/api/admin/dynamic-config/batch-update', {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${apiBaseUrl}/admin/dynamic-config/batch-update`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -201,7 +204,8 @@ const DynamicConfigurationManagement: React.FC = () => {
 
   const reloadConfigurations = async () => {
     try {
-      const response = await fetch('/api/admin/dynamic-config/reload', {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${apiBaseUrl}/admin/dynamic-config/reload`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -221,7 +225,8 @@ const DynamicConfigurationManagement: React.FC = () => {
 
   const exportConfigurations = async () => {
     try {
-      const response = await fetch('/api/admin/dynamic-config/export?include_sensitive=false', {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${apiBaseUrl}/admin/dynamic-config/export?include_sensitive=false`, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',

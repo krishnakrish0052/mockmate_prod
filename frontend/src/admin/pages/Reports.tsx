@@ -249,7 +249,8 @@ const Reports: React.FC = () => {
 
   const fetchReportTemplates = async () => {
     try {
-      const response = await fetch('/api/admin/reports/templates', {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${apiBaseUrl}/admin/reports/templates`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('admin_token')}`,
           'Content-Type': 'application/json',
@@ -280,7 +281,8 @@ const Reports: React.FC = () => {
         limit: pagination.limit.toString(),
       });
 
-      const response = await fetch(`/api/admin/reports/history?${params}`, {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${apiBaseUrl}/admin/reports/history?${params}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('admin_token')}`,
           'Content-Type': 'application/json',

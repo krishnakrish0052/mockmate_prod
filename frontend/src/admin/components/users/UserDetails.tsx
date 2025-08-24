@@ -79,7 +79,8 @@ const UserDetails: React.FC<UserDetailsProps> = ({ userId, onClose, onUserUpdate
 
   const fetchUserDetails = async () => {
     try {
-      const response = await fetch(`/api/admin/users-enhanced/${userId}/profile`, {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${apiBaseUrl}/admin/users-enhanced/${userId}/profile`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('admin_token')}`,
           'Content-Type': 'application/json',
@@ -102,7 +103,8 @@ const UserDetails: React.FC<UserDetailsProps> = ({ userId, onClose, onUserUpdate
 
   const fetchUserHistory = async () => {
     try {
-      const response = await fetch(`/api/admin/users-enhanced/${userId}/history`, {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${apiBaseUrl}/admin/users-enhanced/${userId}/history`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('admin_token')}`,
           'Content-Type': 'application/json',
@@ -123,7 +125,8 @@ const UserDetails: React.FC<UserDetailsProps> = ({ userId, onClose, onUserUpdate
   const saveAdminNotes = async () => {
     setSaving(true);
     try {
-      const response = await fetch(`/api/admin/users-enhanced/${userId}`, {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${apiBaseUrl}/admin/users-enhanced/${userId}`, {
         method: 'PATCH',
         headers: {
           Authorization: `Bearer ${localStorage.getItem('admin_token')}`,
@@ -155,7 +158,8 @@ const UserDetails: React.FC<UserDetailsProps> = ({ userId, onClose, onUserUpdate
     const newCredits = prompt('Enter new credit amount:', user?.credits.toString());
     if (newCredits && !isNaN(parseInt(newCredits))) {
       try {
-        const response = await fetch(`/api/admin/users-enhanced/${userId}/credits/adjust`, {
+        const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+        const response = await fetch(`${apiBaseUrl}/admin/users-enhanced/${userId}/credits/adjust`, {
           method: 'PATCH',
           headers: {
             Authorization: `Bearer ${localStorage.getItem('admin_token')}`,
@@ -192,7 +196,8 @@ const UserDetails: React.FC<UserDetailsProps> = ({ userId, onClose, onUserUpdate
     if (action === 'suspend' && !reason) return;
 
     try {
-      const endpoint = `/api/admin/users-enhanced/${userId}/${action}`;
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const endpoint = `${apiBaseUrl}/admin/users-enhanced/${userId}/${action}`;
       const body =
         action === 'suspend'
           ? { reason, admin_notes: `User ${action}ed by admin on ${new Date().toISOString()}` }
