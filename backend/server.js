@@ -45,6 +45,7 @@ import sessionRoutes from './routes/sessions.js';
 import resumeRoutes from './routes/resumes.js';
 import paymentRoutes from './routes/payments.js';
 import webhookRoutes from './routes/webhook.js';
+import userRoutes from './routes/users.js';
 
 // Import admin routes
 import adminRoutes from './routes/admin/admin.js';
@@ -253,7 +254,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/sessions', sessionRoutes);
 app.use('/api/resumes', resumeRoutes);
 app.use('/api/payments', paymentRoutes);
-// User profile routes will be added dynamically after database initialization
+app.use('/api/users', userRoutes);
 
 // Configuration routes (public for frontend access)
 // Apply admin auth to specific icon management routes
