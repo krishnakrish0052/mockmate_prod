@@ -694,7 +694,7 @@ async function handlePaymentSuccess(paymentIntent) {
       `
       INSERT INTO credit_transactions (
         user_id, credits_amount, transaction_type, description, created_at
-      ) VALUES ($1, $2, 'credit', $3, CURRENT_TIMESTAMP)
+      ) VALUES ($1, $2, 'purchase', $3, CURRENT_TIMESTAMP)
       RETURNING id, user_id, credits_amount
     `,
       [
