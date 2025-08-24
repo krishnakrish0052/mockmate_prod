@@ -107,7 +107,7 @@ if (process.env.NODE_ENV === 'production') {
 // Security middleware
 app.use(helmet());
 
-// CORS configuration
+// CORS configuration with enhanced debugging
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:3001',
@@ -120,35 +120,45 @@ const allowedOrigins = [
 
 // Add environment-specific origins
 if (process.env.CORS_ORIGINS) {
-  allowedOrigins.push(...process.env.CORS_ORIGINS.split(','));
+  allowedOrigins.push(...process.env.CORS_ORIGINS.split(',').map(origin => origin.trim()));
 }
 if (process.env.CORS_ORIGIN) {
-  allowedOrigins.push(process.env.CORS_ORIGIN);
+  allowedOrigins.push(process.env.CORS_ORIGIN.trim());
 }
 if (process.env.FRONTEND_URL) {
-  allowedOrigins.push(process.env.FRONTEND_URL);
+  allowedOrigins.push(process.env.FRONTEND_URL.trim());
 }
 
-// Remove duplicates
-const uniqueOrigins = [...new Set(allowedOrigins)];
+// Remove duplicates and empty strings
+const uniqueOrigins = [...new Set(allowedOrigins.filter(Boolean))];
 
-console.log('CORS allowed origins:', uniqueOrigins);
+console.log('🌐 CORS Configuration:');
+console.log('  Allowed Origins:', uniqueOrigins);
+console.log('  Environment:', process.env.NODE_ENV || 'development');
 
+// Enhanced CORS configuration
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps or curl requests)
-      if (!origin) return callback(null, true);
+      console.log(`🔍 CORS Request - Origin: ${origin || 'none'}`);
+      
+      // Allow requests with no origin (like mobile apps, curl, or same-origin requests)
+      if (!origin) {
+        console.log('✅ CORS: Allowing request with no origin');
+        return callback(null, true);
+      }
       
       if (uniqueOrigins.includes(origin)) {
+        console.log(`✅ CORS: Allowing origin: ${origin}`);
         return callback(null, true);
       } else {
-        console.warn(`CORS blocked origin: ${origin}`);
-        return callback(new Error('Not allowed by CORS'));
+        console.warn(`❌ CORS: Blocking origin: ${origin}`);
+        console.warn(`   Allowed origins: ${uniqueOrigins.join(', ')}`);
+        return callback(new Error(`CORS policy does not allow origin: ${origin}`));
       }
     },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'],
     allowedHeaders: [
       'Content-Type', 
       'Authorization', 
@@ -157,13 +167,29 @@ app.use(
       'Origin',
       'X-File-Name',
       'Cache-Control',
+      'X-CSRF-Token',
       'X-Requested-With'
     ],
-    exposedHeaders: ['Content-Length', 'X-File-Hash'],
+    exposedHeaders: [
+      'Content-Length', 
+      'X-File-Hash', 
+      'Access-Control-Allow-Origin',
+      'Access-Control-Allow-Credentials'
+    ],
     preflightContinue: false,
-    optionsSuccessStatus: 204
+    optionsSuccessStatus: 204,
+    maxAge: 86400 // Cache preflight response for 24 hours
   })
 );
+
+// Additional explicit OPTIONS handler for troubleshooting
+app.options('*', (req, res) => {
+  console.log(`🔧 OPTIONS request to: ${req.path}`);
+  console.log(`   Origin: ${req.headers.origin || 'none'}`);
+  console.log(`   Method: ${req.headers['access-control-request-method'] || 'none'}`);
+  console.log(`   Headers: ${req.headers['access-control-request-headers'] || 'none'}`);
+  res.status(204).send();
+});
 
 // Rate limiting with enhanced security
 const limiter = rateLimit({

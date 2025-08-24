@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { EyeIcon, EyeSlashIcon, CommandLineIcon, UserPlusIcon } from '@heroicons/react/24/outline';
+import { apiCall } from '../../utils/apiUtils';
 import {
   TerminalWindow,
   TypingText,
@@ -37,6 +38,9 @@ const Register: React.FC = () => {
 
   const [showSuccess, setShowSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [registeredEmail, setRegisteredEmail] = useState('');
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendMessage, setResendMessage] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,6 +72,7 @@ const Register: React.FC = () => {
         // Show success message and prompt to check email
         setShowSuccess(true);
         setSuccessMessage(result.message);
+        setRegisteredEmail(formData.email);
       } else {
         // Direct login (legacy flow)
         navigate('/dashboard');
@@ -76,6 +81,26 @@ const Register: React.FC = () => {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    if (!registeredEmail) return;
+    
+    setResendLoading(true);
+    setResendMessage('');
+    
+    try {
+      await apiCall('/email-verification/resend', {
+        method: 'POST',
+        body: JSON.stringify({ email: registeredEmail }),
+      });
+      
+      setResendMessage('Verification email resent! Please check your inbox.');
+    } catch (err: any) {
+      setResendMessage(err.response?.data?.message || 'Failed to resend email. Please try again.');
+    } finally {
+      setResendLoading(false);
     }
   };
 
@@ -136,6 +161,24 @@ const Register: React.FC = () => {
                         login here
                       </Link>
                       .
+                    </div>
+                    <div className='mt-3 pt-3 border-t border-green-700'>
+                      <div className='flex items-center justify-between'>
+                        <span className='text-xs text-green-300'>Didn't receive the email?</span>
+                        <button
+                          type='button'
+                          onClick={handleResendVerification}
+                          disabled={resendLoading}
+                          className='text-xs text-primary-400 underline hover:text-primary-300 disabled:opacity-50 disabled:cursor-not-allowed'
+                        >
+                          {resendLoading ? 'Sending...' : 'Resend verification email'}
+                        </button>
+                      </div>
+                      {resendMessage && (
+                        <div className={`mt-2 text-xs ${resendMessage.includes('Failed') ? 'text-red-300' : 'text-green-300'}`}>
+                          {resendMessage}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

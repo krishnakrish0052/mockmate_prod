@@ -4,6 +4,9 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import LandingPage from './components/LandingPage';
 import Login from './components/auth/Login';
 import Register from './components/auth/Register';
+import VerifyEmail from './components/auth/VerifyEmail';
+import ForgotPassword from './components/auth/ForgotPassword';
+import ResetPassword from './components/auth/ResetPassword';
 import Dashboard from './components/Dashboard';
 import CreateSession from './components/session/CreateSession';
 import SessionView from './components/session/SessionView';
@@ -16,6 +19,7 @@ import AppDownload from './components/AppDownload';
 import Policy from './components/Policy';
 import PaymentSuccess from './components/payments/PaymentSuccess';
 import PaymentCancel from './components/payments/PaymentCancel';
+import UserProfile from './components/profile/UserProfile';
 import ProtectedRoute from './components/ProtectedRoute';
 
 // Debug helper for development
@@ -50,6 +54,30 @@ function App() {
             element={
               <PublicRoute>
                 <Register />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path='/verify-email'
+            element={
+              <PublicRoute>
+                <VerifyEmail />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path='/forgot-password'
+            element={
+              <PublicRoute>
+                <ForgotPassword />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path='/reset-password'
+            element={
+              <PublicRoute>
+                <ResetPassword />
               </PublicRoute>
             }
           />
@@ -132,6 +160,15 @@ function App() {
             element={
               <ProtectedRoute>
                 <AppDownload />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path='/profile'
+            element={
+              <ProtectedRoute>
+                <UserProfile />
               </ProtectedRoute>
             }
           />

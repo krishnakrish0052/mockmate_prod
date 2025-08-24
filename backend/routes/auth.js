@@ -28,7 +28,7 @@ const getDynamicConfig = async () => {
 };
 
 import { authenticateToken, blacklistToken } from '../middleware/auth.js';
-import { logError, logSecurityEvent } from '../config/logger.js';
+import { logError, logSecurityEvent, logger } from '../config/logger.js';
 
 const router = express.Router();
 
@@ -517,9 +517,42 @@ router.post(
           [userId, resetToken, resetExpires]
         );
 
-        // TODO: Send email with reset link
-        // For now, we'll just log it (in production, integrate with email service)
-        console.log(`Password reset token for ${email}: ${resetToken}`);
+        // Send password reset email
+        try {
+          const userDetails = await pool.query(
+            'SELECT first_name, name FROM users WHERE id = $1', 
+            [userId]
+          );
+          const user = userDetails.rows[0];
+          
+          const { emailService } = await import('../services/EmailService.js');
+          await emailService.sendPasswordResetEmail(
+            {
+              id: userId,
+              email: email,
+              first_name: user.first_name,
+              name: user.name
+            },
+            resetToken,
+            {
+              ip: req.ip,
+              userAgent: req.get('User-Agent') || 'Unknown',
+              location: 'Unknown' // Could integrate with IP geolocation service
+            }
+          );
+          
+          logger.info(`Password reset email sent to ${email}`, {
+            userId,
+            ip: req.ip
+          });
+        } catch (emailError) {
+          logger.error('Failed to send password reset email:', {
+            userId,
+            email,
+            error: emailError.message
+          });
+          // Don't fail the request if email fails - security consideration
+        }
 
         logSecurityEvent('PASSWORD_RESET_REQUESTED', {
           userId,

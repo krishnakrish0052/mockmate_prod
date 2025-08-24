@@ -270,25 +270,25 @@
 
             <h1>Email Verification Required</h1>
             
-            <p>Hello <span class="highlight-text">{{userName}}</span>,</p>
+            <p>Hello <span class="highlight-text">{{USER_NAME}}</span>,</p>
             
             <p>Welcome to MockMate! To complete your account setup and start using our AI-powered interview platform, you need to verify your email address.</p>
 
             <div class="terminal-info">
                 <h3>📧 Verification Details:</h3>
-                <p><strong>Account:</strong> {{userEmail}}</p>
+                <p><strong>Account:</strong> {{USER_EMAIL}}</p>
                 <p><strong>Status:</strong> Pending Verification</p>
                 <p><strong>Action Required:</strong> Click the verification link below</p>
             </div>
 
             <div class="code-block">
 # Execute verification command:
-curl -X POST "{{verificationUrl}}"
+curl -X POST "{{VERIFICATION_URL}}"
 # OR click the button below for GUI verification
             </div>
 
             <center>
-                <a href="{{verificationUrl}}" class="terminal-button-link">
+                <a href="{{VERIFICATION_URL}}" class="terminal-button-link">
                     VERIFY EMAIL ADDRESS
                 </a>
             </center>
@@ -309,7 +309,7 @@ curl -X POST "{{verificationUrl}}"
             </ul>
 
             <p>If you're having trouble clicking the button, copy and paste the following URL into your browser:</p>
-            <div class="code-block">{{verificationUrl}}</div>
+            <div class="code-block">{{VERIFICATION_URL}}</div>
 
             <p>Happy interviewing!</p>
             <p><strong>The MockMate Team</strong></p>

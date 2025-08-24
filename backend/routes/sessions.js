@@ -107,46 +107,103 @@ router.post(
         });
       }
 
-      // Create session in database
+      // Create session in database with proper transaction handling
       const pool = getPool();
-      const createSessionQuery = `
-        INSERT INTO sessions (
-          id, user_id, session_name, job_title, job_description, difficulty_level, 
-          estimated_duration_minutes, interview_type, resume_id,
-          status, created_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'created', CURRENT_TIMESTAMP)
-        RETURNING *
-      `;
+      const client = await pool.connect();
+      let session;
+      
+      try {
+        await client.query('BEGIN');
+        
+        // Verify user exists and get user info
+        const userQuery = 'SELECT id, credits FROM users WHERE id = $1 AND is_active = true';
+        const userResult = await client.query(userQuery, [req.user.id]);
+        
+        if (userResult.rows.length === 0) {
+          throw new Error('User not found or inactive');
+        }
+        
+        const user = userResult.rows[0];
+        
+        // Double-check credits in database
+        if (user.credits < totalCreditCost) {
+          throw new Error(`Insufficient credits: required ${totalCreditCost}, available ${user.credits}`);
+        }
+        
+        const createSessionQuery = `
+          INSERT INTO sessions (
+            id, user_id, session_name, job_title, job_description, difficulty_level, 
+            estimated_duration_minutes, interview_type, resume_id,
+            status, created_at
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'created', CURRENT_TIMESTAMP)
+          RETURNING *
+        `;
 
-      const sessionResult = await pool.query(createSessionQuery, [
-        sessionId,
-        req.user.id,
-        jobTitle, // Using job_title as session_name for now
-        jobTitle,
-        jobDescription || null,
-        difficulty,
-        duration,
-        sessionType,
-        resumeId || null,
-      ]);
-
-      const session = sessionResult.rows[0];
-
-      // Store session data in Redis for quick access
-      await sessionManager.storeSession(
-        sessionId,
-        {
-          userId: req.user.id,
-          status: 'created',
+        const sessionResult = await client.query(createSessionQuery, [
+          sessionId,
+          req.user.id,
+          jobTitle, // Using job_title as session_name for now
           jobTitle,
+          jobDescription || null,
           difficulty,
           duration,
           sessionType,
-          creditCost: totalCreditCost,
-          createdAt: session.created_at,
-        },
-        24 * 60 * 60
-      ); // 24 hours
+          resumeId || null,
+        ]);
+
+        if (sessionResult.rows.length === 0) {
+          throw new Error('Failed to create session - no data returned');
+        }
+        
+        session = sessionResult.rows[0];
+        
+        await client.query('COMMIT');
+        console.log('✅ Session created successfully in database:', sessionId);
+        
+      } catch (dbError) {
+        await client.query('ROLLBACK');
+        console.error('❌ Database error during session creation:', dbError);
+        
+        // Handle specific error cases
+        if (dbError.code === '23503') { // Foreign key violation
+          return res.status(400).json({
+            error: 'Invalid user reference or associated data not found',
+            code: 'INVALID_USER_REFERENCE',
+            details: 'The user account may not exist or be inactive'
+          });
+        } else if (dbError.code === '23505') { // Unique violation
+          return res.status(409).json({
+            error: 'Session with this ID already exists',
+            code: 'DUPLICATE_SESSION_ID',
+          });
+        } else {
+          throw dbError; // Re-throw to be caught by outer catch
+        }
+      } finally {
+        client.release();
+      }
+
+      // Store session data in Redis for quick access (only if DB insert succeeded)
+      try {
+        await sessionManager.storeSession(
+          sessionId,
+          {
+            userId: req.user.id,
+            status: 'created',
+            jobTitle,
+            difficulty,
+            duration,
+            sessionType,
+            creditCost: totalCreditCost,
+            createdAt: session.created_at,
+          },
+          24 * 60 * 60
+        ); // 24 hours
+        console.log('✅ Session stored in Redis cache:', sessionId);
+      } catch (redisError) {
+        console.error('⚠️ Redis cache error (non-fatal):', redisError);
+        // Don't fail the request if Redis fails, session is in DB
+      }
 
       logSessionEvent('SESSION_CREATED', sessionId, req.user.id, {
         jobTitle,
