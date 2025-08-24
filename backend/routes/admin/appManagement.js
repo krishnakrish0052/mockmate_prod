@@ -165,7 +165,144 @@ router.get('/versions', requirePermission(['app.read']), async (req, res) => {
   }
 });
 
-// Upload new app version
+// Alternative CORS-friendly upload endpoint
+router.post(
+  '/versions/upload-cors-bypass',
+  (req, res, next) => {
+    // Add CORS headers manually
+    res.header('Access-Control-Allow-Origin', 'https://mock-mate.com');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    next();
+  },
+  requirePermission(['app.write']),
+  upload.single('appFile'),
+  [
+    body('platformId').isUUID().withMessage('Valid platform ID is required'),
+    body('version')
+      .matches(/^\d+\.\d+\.\d+$/)
+      .withMessage('Version must be in format x.y.z'),
+    body('description').optional().isString().withMessage('Description must be a string'),
+    body('displayName').optional().isString().withMessage('Display name must be a string'),
+    body('minOsVersion').optional().isString().withMessage('Minimum OS version must be a string'),
+    body('changelog').optional().isString().withMessage('Changelog must be a string'),
+    body('releaseNotes').optional().isString().withMessage('Release notes must be a string'),
+    body('isBeta').optional().isBoolean().withMessage('Is beta must be a boolean'),
+    body('isFeatured').optional().isBoolean().withMessage('Is featured must be a boolean'),
+  ],
+  async (req, res) => {
+    // Same logic as original upload endpoint
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          success: false,
+          errors: errors.array(),
+        });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          message: 'App file is required',
+        });
+      }
+
+      const database = req.app.locals.database;
+      const {
+        platformId,
+        version,
+        description,
+        displayName,
+        minOsVersion,
+        changelog,
+        releaseNotes,
+        isBeta,
+        isFeatured,
+      } = req.body;
+
+      const versionCode = versionToCode(version);
+      const fileHash = await calculateFileHash(req.file.path);
+
+      // Check if version already exists for this platform
+      const existingVersion = await database.query(
+        `SELECT id FROM app_versions WHERE platform_id = $1 AND version = $2`,
+        [platformId, version]
+      );
+
+      if (existingVersion.rows.length > 0) {
+        // Clean up uploaded file
+        await fs.unlink(req.file.path);
+        return res.status(400).json({
+          success: false,
+          message: `Version ${version} already exists for this platform`,
+        });
+      }
+
+      // Insert new version
+      const insertResult = await database.query(
+        `
+        INSERT INTO app_versions (
+          platform_id, version, version_code, display_name, description,
+          file_name, file_path, file_size, file_hash, min_os_version,
+          changelog, release_notes, is_beta, is_featured, is_active, created_by
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+        RETURNING id
+      `,
+        [
+          platformId,
+          version,
+          versionCode,
+          displayName || req.file.originalname,
+          description || `App version ${version}`,
+          req.file.filename,
+          req.file.path.replace(__dirname, '').replace(/\\/g, '/'),
+          req.file.size,
+          fileHash,
+          minOsVersion,
+          changelog,
+          releaseNotes,
+          isBeta === 'true',
+          isFeatured === 'true',
+          true,
+          req.user.id,
+        ]
+      );
+
+      const newVersionId = insertResult.rows[0].id;
+
+      res.status(201).json({
+        success: true,
+        message: 'App version uploaded successfully',
+        data: {
+          versionId: newVersionId,
+          version,
+          fileName: req.file.filename,
+          fileSize: req.file.size,
+          hash: fileHash,
+        },
+      });
+    } catch (error) {
+      // Clean up uploaded file on error
+      if (req.file && req.file.path) {
+        try {
+          await fs.unlink(req.file.path);
+        } catch (unlinkError) {
+          console.error('Error cleaning up uploaded file:', unlinkError);
+        }
+      }
+
+      res.status(500).json({
+        success: false,
+        message: 'Failed to upload app version',
+        error: error.message,
+      });
+    }
+  }
+);
+
+// Original upload endpoint
 router.post(
   '/versions/upload',
   requirePermission(['app.write']),

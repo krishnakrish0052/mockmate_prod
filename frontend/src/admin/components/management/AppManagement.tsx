@@ -192,39 +192,37 @@ const AppManagement: React.FC = () => {
       if (!token) {
         throw new Error('No authentication token available');
       }
-      const xhr = new XMLHttpRequest();
-
-      xhr.upload.addEventListener('progress', e => {
-        if (e.lengthComputable) {
-          const progress = (e.loaded / e.total) * 100;
-          setUploadProgress(Math.round(progress));
-        }
+      // Use fetch instead of XMLHttpRequest for better CORS handling
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
+      const uploadUrl = `${apiBaseUrl}/admin/apps/versions/upload`;
+      
+      console.log('🚀 Starting upload to:', uploadUrl);
+      
+      const response = await fetch(uploadUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          // Don't set Content-Type - let browser set it with boundary for FormData
+        },
+        body: formData,
       });
-
-      xhr.addEventListener('load', () => {
-        if (xhr.status === 200) {
-          const response = JSON.parse(xhr.responseText);
-          console.log('Upload successful:', response);
-          setShowUploadModal(false);
-          resetUploadForm();
-          fetchVersions();
-          setUploadProgress(0);
-        } else {
-          const error = JSON.parse(xhr.responseText);
-          setError('Upload failed: ' + error.message);
-        }
-        setLoading(false);
-      });
-
-      xhr.addEventListener('error', () => {
-        setError('Upload failed due to network error');
-        setLoading(false);
-      });
-
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-      xhr.open('POST', `${apiBaseUrl}/admin/apps/versions/upload`);
-      xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-      xhr.send(formData);
+      
+      console.log('📡 Upload response status:', response.status);
+      console.log('📡 Upload response headers:', Object.fromEntries(response.headers.entries()));
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Upload failed:', errorText);
+        throw new Error(`Upload failed: ${response.status} ${response.statusText}`);
+      }
+      
+      const result = await response.json();
+      console.log('✅ Upload successful:', result);
+      
+      setShowUploadModal(false);
+      resetUploadForm();
+      fetchVersions();
+      setUploadProgress(100);
     } catch (err) {
       setError('Upload failed: ' + (err as Error).message);
       setLoading(false);
