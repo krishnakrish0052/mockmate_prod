@@ -26,8 +26,11 @@ const storage = multer.diskStorage({
   filename: (req, file, cb) => {
     // Keep original filename but add timestamp to avoid conflicts
     const timestamp = Date.now();
-    const originalName = file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_');
-    cb(null, `${timestamp}_${originalName}`);
+    // More conservative sanitization - only replace dangerous characters
+    const originalName = file.originalname.replace(/[\\/:*?"<>|]/g, '_');
+    // Ensure we don't have double extensions or security issues
+    const sanitizedName = originalName.replace(/\.\.+/g, '.').replace(/^\.|\.$/, '');
+    cb(null, `${timestamp}_${sanitizedName}`);
   },
 });
 
@@ -256,7 +259,7 @@ router.post(
           versionCode,
           displayName || req.file.originalname,
           description || `App version ${version}`,
-          req.file.filename,
+          req.file.originalname, // Store original filename for downloads
           req.file.path.replace(__dirname, '').replace(/\\/g, '/'),
           req.file.size,
           fileHash,
@@ -393,7 +396,7 @@ router.post(
           versionCode,
           displayName || null,
           description || null,
-          originalname,
+          originalname, // Store original filename for downloads
           filename,
           size,
           fileHash,

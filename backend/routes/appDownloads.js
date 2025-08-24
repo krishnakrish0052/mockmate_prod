@@ -233,12 +233,32 @@ router.get(
         [versionId]
       );
 
-      // Set appropriate headers for download
+      // Set appropriate headers for download with proper MIME types
       const fileName = version.display_name || version.file_name;
+      const fileExt = path.extname(fileName).toLowerCase();
+      
+      // Map file extensions to proper MIME types
+      const mimeTypes = {
+        '.exe': 'application/x-msdownload',
+        '.msi': 'application/x-msi',
+        '.dmg': 'application/x-apple-diskimage',
+        '.pkg': 'application/x-newton-compatible-pkg',
+        '.deb': 'application/vnd.debian.binary-package',
+        '.rpm': 'application/x-rpm',
+        '.appimage': 'application/x-executable',
+        '.zip': 'application/zip',
+        '.tar.gz': 'application/gzip'
+      };
+      
+      const contentType = mimeTypes[fileExt] || 'application/octet-stream';
+      
       res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
-      res.setHeader('Content-Type', 'application/octet-stream');
+      res.setHeader('Content-Type', contentType);
       res.setHeader('Content-Length', version.file_size);
       res.setHeader('X-File-Hash', version.file_hash);
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
 
       // Stream the file
       const fileStream = await fs.open(filePath, 'r');
