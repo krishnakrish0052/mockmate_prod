@@ -69,8 +69,8 @@ const Dashboard: React.FC = () => {
   const fetchDashboardData = async () => {
     try {
       const [sessionsRes, resumesRes] = await Promise.all([
-        axios.get('/sessions?limit=5'),
-        axios.get('/resumes?limit=3'),
+        axios.get('/api/sessions?limit=5'),
+        axios.get('/api/resumes?limit=3'),
       ]);
 
       setSessions(sessionsRes.data.sessions || []);

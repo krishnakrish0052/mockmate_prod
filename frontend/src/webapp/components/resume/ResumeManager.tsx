@@ -59,7 +59,7 @@ const ResumeManager: React.FC = () => {
 
   const fetchResumes = async () => {
     try {
-      const response = await axios.get('/resumes');
+      const response = await axios.get('/api/resumes');
       setResumes(response.data.resumes || []);
     } catch (error) {
       console.error('Failed to fetch resumes:', error);
@@ -75,7 +75,7 @@ const ResumeManager: React.FC = () => {
 
     setDeleting(resumeId);
     try {
-      await axios.delete(`/resumes/${resumeId}`);
+      await axios.delete(`/api/resumes/${resumeId}`);
       setResumes(resumes.filter(r => r.id !== resumeId));
     } catch (error) {
       console.error('Failed to delete resume:', error);
