@@ -93,6 +93,9 @@ const server = http.createServer(app);
 // We'll initialize Socket.IO after setting up dynamic config
 let io;
 
+// Trust proxy - Important for production deployments behind reverse proxy/load balancer
+app.set('trust proxy', true);
+
 // Security middleware
 app.use(helmet());
 
@@ -792,12 +795,15 @@ async function startServer() {
     logger.info('Dynamic configuration service initialized successfully');
 
     // Initialize services with dynamic configuration
-    const { EmailService } = await import('./services/EmailService.js');
+    const { EmailService, initializeGlobalEmailService } = await import('./services/EmailService.js');
     const FirebaseAuthService = await import('./services/FirebaseAuthService.js');
 
     const emailService = new EmailService(dynamicConfig);
     await emailService.initialize();
     app.locals.emailService = emailService;
+    
+    // Initialize global email service for backward compatibility
+    initializeGlobalEmailService(dynamicConfig);
     logger.info('Email service initialized with dynamic configuration');
 
     const firebaseAuthService = new FirebaseAuthService.default(getDatabase(), dynamicConfig);

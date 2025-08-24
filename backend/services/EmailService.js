@@ -911,6 +911,68 @@ class EmailService {
 }
 
 // Note: emailService will be initialized with dynamic config in server.js
-export const emailService = null;
+// Export a singleton instance that can be initialized later
+let globalEmailService = null;
+
+export const initializeGlobalEmailService = (dynamicConfig) => {
+  globalEmailService = new EmailService(dynamicConfig);
+  return globalEmailService;
+};
+
+export const getGlobalEmailService = () => {
+  if (!globalEmailService) {
+    throw new Error('Email service not initialized. Please call initializeGlobalEmailService first.');
+  }
+  return globalEmailService;
+};
+
+// For backward compatibility - services should now use getGlobalEmailService()
+export const emailService = {
+  get initialized() {
+    return globalEmailService?.initialized || false;
+  },
+  
+  async sendVerificationEmail(...args) {
+    const service = getGlobalEmailService();
+    if (!service.initialized) {
+      await service.initialize();
+    }
+    return service.sendVerificationEmail(...args);
+  },
+  
+  async sendWelcomeEmail(...args) {
+    const service = getGlobalEmailService();
+    if (!service.initialized) {
+      await service.initialize();
+    }
+    return service.sendWelcomeEmail(...args);
+  },
+  
+  async sendPasswordResetEmail(...args) {
+    const service = getGlobalEmailService();
+    if (!service.initialized) {
+      await service.initialize();
+    }
+    return service.sendPasswordResetEmail(...args);
+  },
+  
+  async sendTemplateEmail(...args) {
+    const service = getGlobalEmailService();
+    if (!service.initialized) {
+      await service.initialize();
+    }
+    return service.sendTemplateEmail(...args);
+  },
+  
+  // Proxy other common methods
+  async sendEmail(...args) {
+    const service = getGlobalEmailService();
+    if (!service.initialized) {
+      await service.initialize();
+    }
+    return service.sendEmail(...args);
+  }
+};
+
 export { EmailService };
 export default EmailService;
