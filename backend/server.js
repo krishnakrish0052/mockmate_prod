@@ -36,6 +36,9 @@ import { PaymentWebhookService } from './services/PaymentWebhookService.js';
 // Import dynamic configuration service
 import { createDynamicConfig } from './services/DynamicConfigService.js';
 
+// Import AlertService
+import { AlertService } from './services/AlertService.js';
+
 // Import web routes
 import authRoutes from './routes/auth.js';
 import sessionRoutes from './routes/sessions.js';
@@ -52,6 +55,7 @@ import dynamicConfigAdminRoutes from './routes/admin/dynamic-config.js';
 import systemAdminRoutes from './routes/admin/system.js';
 import iconManagementRoutes from './routes/admin/iconManagement.js';
 import appManagementRoutes from './routes/admin/appManagement.js';
+import alertRoutes from './routes/admin/alerts.js';
 import appDownloadRoutes from './routes/appDownloads.js';
 import { adminAuth } from './middleware/admin/adminAuth.js';
 
@@ -406,6 +410,15 @@ app.use(
 // App Downloads Routes (Public)
 app.use('/api/apps', appDownloadRoutes);
 
+// Alert Routes (Admin)
+app.use(
+  '/api/admin/alerts',
+  (req, res, next) => {
+    return adminAuth(req, res, next);
+  },
+  alertRoutes
+);
+
 // Note: Removed fallback template route to allow proper service routes to handle requests
 
 // Email automation endpoint (fallback)
@@ -718,6 +731,13 @@ async function startServer() {
       },
     });
     logger.info('Socket.IO initialized with dynamic configuration');
+
+    // Initialize alert service after Socket.IO is ready
+    console.log('🚨 Initializing alert service...');
+    const alertService = new AlertService(getDatabase(), io); // Pass Socket.IO for real-time notifications
+    app.locals.alertService = alertService;
+    logger.info('Alert service initialized successfully');
+    console.log('✅ Alert service initialization complete');
 
     // Initialize payment services
     try {
