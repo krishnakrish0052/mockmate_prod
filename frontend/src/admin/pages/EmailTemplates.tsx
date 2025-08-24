@@ -69,6 +69,9 @@ const EmailTemplates: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<EmailTemplate | null>(null);
   const [showPreview, setShowPreview] = useState(false);
+  const [showEditor, setShowEditor] = useState(false);
+  const [previewData, setPreviewData] = useState<any>(null);
+  const [loadingPreview, setLoadingPreview] = useState(false);
 
   // Check permissions
   const canRead = hasPermission('content_management') || hasPermission('email_templates');
@@ -116,9 +119,54 @@ const EmailTemplates: React.FC = () => {
     }
   };
 
-  const handlePreviewTemplate = (template: EmailTemplate) => {
+  const handlePreviewTemplate = async (template: EmailTemplate) => {
+    try {
+      setLoadingPreview(true);
+      setSelectedTemplate(template);
+      
+      // Try to get the full template with HTML content
+      const response = await apiCall(`email-templates/${template.id}`, {
+        method: 'GET',
+      });
+      
+      if (response.success) {
+        setPreviewData(response.data);
+      } else {
+        // Fallback to basic template data
+        setPreviewData({
+          template: template,
+          html_content: template.html_template || '<p>No HTML content available</p>',
+        });
+      }
+      
+      setShowPreview(true);
+    } catch (error) {
+      console.error('Error loading template preview:', error);
+      // Fallback to basic template data
+      setPreviewData({
+        template: template,
+        html_content: template.html_template || '<p>No HTML content available</p>',
+      });
+      setShowPreview(true);
+    } finally {
+      setLoadingPreview(false);
+    }
+  };
+
+  const handleEditTemplate = (template: EmailTemplate) => {
     setSelectedTemplate(template);
-    setShowPreview(true);
+    setShowEditor(true);
+  };
+
+  const closePreview = () => {
+    setShowPreview(false);
+    setSelectedTemplate(null);
+    setPreviewData(null);
+  };
+
+  const closeEditor = () => {
+    setShowEditor(false);
+    setSelectedTemplate(null);
   };
 
   const filteredTemplates = templates.filter(template => {
@@ -318,7 +366,11 @@ const EmailTemplates: React.FC = () => {
                     </button>
                     {canWrite && (
                       <>
-                        <button className="p-2 rounded text-cli-light-gray hover:text-cli-cyan hover:bg-cli-dark transition-colors" title="Edit">
+                        <button 
+                          onClick={() => handleEditTemplate(template)}
+                          className="p-2 rounded text-cli-light-gray hover:text-cli-cyan hover:bg-cli-dark transition-colors" 
+                          title="Edit"
+                        >
                           <PencilIcon className="h-4 w-4" />
                         </button>
                         <button className="p-2 rounded text-cli-light-gray hover:text-red-400 hover:bg-cli-dark transition-colors" title="Delete">
@@ -364,7 +416,10 @@ const EmailTemplates: React.FC = () => {
                       Preview
                     </button>
                     {canWrite && (
-                      <button className="flex-1 admin-btn-primary text-xs py-2">
+                      <button 
+                        onClick={() => handleEditTemplate(template)}
+                        className="flex-1 admin-btn-primary text-xs py-2"
+                      >
                         <CodeBracketIcon className="h-4 w-4" />
                         Edit MJML
                       </button>
@@ -380,34 +435,204 @@ const EmailTemplates: React.FC = () => {
       {/* Preview Modal */}
       {showPreview && selectedTemplate && (
         <div className="fixed inset-0 bg-cli-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-cli-dark border border-cli-gray rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
+          <div className="bg-cli-dark border border-cli-gray rounded-lg max-w-6xl w-full max-h-[90vh] overflow-hidden">
             <div className="flex items-center justify-between p-4 border-b border-cli-gray">
-              <h3 className="font-mono font-bold text-cli-white">
-                Template Preview: {formatTemplateName(selectedTemplate.name || selectedTemplate.template_name)}
-              </h3>
+              <div className="flex items-center space-x-3">
+                <EyeIcon className="h-5 w-5 text-primary-500" />
+                <h3 className="font-mono font-bold text-cli-white">
+                  Template Preview: {formatTemplateName(selectedTemplate.name || selectedTemplate.template_name)}
+                </h3>
+                <CliBadge variant={selectedTemplate.is_active ? 'success' : 'warning'}>
+                  {selectedTemplate.is_active ? 'ACTIVE' : 'INACTIVE'}
+                </CliBadge>
+              </div>
               <button
                 onClick={() => setShowPreview(false)}
-                className="text-cli-light-gray hover:text-cli-white"
+                className="text-cli-light-gray hover:text-cli-white text-xl font-bold px-2 py-1 hover:bg-cli-gray rounded"
               >
                 ✕
               </button>
             </div>
-            <div className="p-4 overflow-auto max-h-[calc(90vh-120px)]">
-              <div className="space-y-4">
-                <div>
-                  <label className="block font-mono text-sm text-cli-green mb-2">Subject:</label>
-                  <div className="bg-cli-darker p-3 rounded font-mono text-cli-white">
-                    {selectedTemplate.subject_template}
+            <div className="p-6 overflow-auto max-h-[calc(90vh-120px)]">
+              {loadingPreview ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="text-center">
+                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary-500 border-t-transparent mx-auto mb-4"></div>
+                    <p className="font-mono text-cli-light-gray">Loading preview...</p>
                   </div>
                 </div>
-                <div>
-                  <label className="block font-mono text-sm text-cli-green mb-2">Preview:</label>
-                  <div className="bg-white p-4 rounded">
-                    <p className="text-gray-800 font-mono text-sm">
-                      Email template preview would be rendered here.
-                      Template ID: {selectedTemplate.id}
-                    </p>
+              ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Template Info */}
+                  <div className="space-y-4">
+                    <TerminalWindow title="Template Information">
+                      <div className="p-4 space-y-4">
+                        <div>
+                          <label className="block font-mono text-xs text-cli-green mb-2">Template ID:</label>
+                          <div className="font-mono text-sm text-cli-light-gray">
+                            {selectedTemplate.id}
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block font-mono text-xs text-cli-green mb-2">Category:</label>
+                          <div className="font-mono text-sm text-cli-white">
+                            {getCategoryName(selectedTemplate.category_id)}
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block font-mono text-xs text-cli-green mb-2">Subject:</label>
+                          <div className="font-mono text-sm text-cli-white bg-cli-darker p-3 rounded">
+                            {selectedTemplate.subject_template}
+                          </div>
+                        </div>
+                        {selectedTemplate.description && (
+                          <div>
+                            <label className="block font-mono text-xs text-cli-green mb-2">Description:</label>
+                            <div className="font-mono text-sm text-cli-light-gray">
+                              {selectedTemplate.description}
+                            </div>
+                          </div>
+                        )}
+                        <div className="grid grid-cols-2 gap-4 pt-2 border-t border-cli-gray">
+                          <div>
+                            <label className="block font-mono text-xs text-cli-green mb-1">Created:</label>
+                            <div className="font-mono text-xs text-cli-light-gray">
+                              {new Date(selectedTemplate.created_at).toLocaleString()}
+                            </div>
+                          </div>
+                          <div>
+                            <label className="block font-mono text-xs text-cli-green mb-1">Status:</label>
+                            <CliBadge variant={selectedTemplate.is_active ? 'success' : 'warning'}>
+                              {selectedTemplate.is_active ? 'ACTIVE' : 'INACTIVE'}
+                            </CliBadge>
+                          </div>
+                        </div>
+                      </div>
+                    </TerminalWindow>
                   </div>
+
+                  {/* Email Preview */}
+                  <div>
+                    <TerminalWindow title="Email Preview" className="h-full">
+                      <div className="p-4">
+                        <div className="bg-white border border-cli-gray rounded-lg overflow-hidden" style={{ minHeight: '400px' }}>
+                          {/* Email Header */}
+                          <div className="bg-gray-100 border-b border-gray-300 p-3">
+                            <div className="flex items-center justify-between text-sm text-gray-600">
+                              <span className="font-mono">From: MockMate &lt;noreply@mockmate.com&gt;</span>
+                            </div>
+                            <div className="font-semibold text-gray-900 mt-1">
+                              {selectedTemplate.subject_template}
+                            </div>
+                          </div>
+                          
+                          {/* Email Content */}
+                          <div className="p-4 bg-white text-gray-900">
+                            {previewData?.html_content ? (
+                              <div 
+                                className="email-preview"
+                                dangerouslySetInnerHTML={{ __html: previewData.html_content }}
+                                style={{
+                                  fontFamily: 'system-ui, -apple-system, sans-serif',
+                                  lineHeight: '1.6',
+                                  color: '#374151'
+                                }}
+                              />
+                            ) : (
+                              <div className="text-center py-12 text-gray-500">
+                                <EnvelopeIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                                <p className="font-mono text-sm">
+                                  No HTML content available for preview
+                                </p>
+                                <p className="font-mono text-xs mt-2">
+                                  Template: {selectedTemplate.template_name || selectedTemplate.name}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </TerminalWindow>
+                  </div>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end space-x-4 mt-6 pt-4 border-t border-cli-gray">
+                <button
+                  onClick={() => setShowPreview(false)}
+                  className="admin-btn-secondary"
+                >
+                  Close
+                </button>
+                {canWrite && (
+                  <button
+                    onClick={() => {
+                      setShowPreview(false);
+                      handleEditTemplate(selectedTemplate);
+                    }}
+                    className="admin-btn-primary"
+                  >
+                    <PencilIcon className="h-4 w-4" />
+                    Edit Template
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Editor Modal */}
+      {showEditor && selectedTemplate && (
+        <div className="fixed inset-0 bg-cli-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-cli-dark border border-cli-gray rounded-lg max-w-6xl w-full max-h-[90vh] overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b border-cli-gray">
+              <div className="flex items-center space-x-3">
+                <CodeBracketIcon className="h-5 w-5 text-primary-500" />
+                <h3 className="font-mono font-bold text-cli-white">
+                  Edit Template: {formatTemplateName(selectedTemplate.name || selectedTemplate.template_name)}
+                </h3>
+                <CliBadge variant="info">MJML</CliBadge>
+              </div>
+              <button
+                onClick={() => setShowEditor(false)}
+                className="text-cli-light-gray hover:text-cli-white text-xl font-bold px-2 py-1 hover:bg-cli-gray rounded"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-6 overflow-auto max-h-[calc(90vh-120px)]">
+              <TerminalWindow title="MJML Template Editor" className="h-96">
+                <div className="p-4 text-center">
+                  <CodeBracketIcon className="h-16 w-16 text-cli-light-gray mx-auto mb-4" />
+                  <h4 className="font-mono font-bold text-cli-white mb-2">Template Editor</h4>
+                  <p className="font-mono text-sm text-cli-light-gray mb-4">
+                    MJML template editor will be implemented here.
+                  </p>
+                  <div className="bg-cli-darker p-4 rounded font-mono text-sm text-cli-white">
+                    <div className="text-cli-green mb-2">Template: {selectedTemplate.template_name || selectedTemplate.name}</div>
+                    <div className="text-cli-light-gray">Subject: {selectedTemplate.subject_template}</div>
+                  </div>
+                </div>
+              </TerminalWindow>
+
+              {/* Editor Action Buttons */}
+              <div className="flex items-center justify-between mt-6 pt-4 border-t border-cli-gray">
+                <div className="flex space-x-2">
+                  <CliBadge variant="warning">Under Development</CliBadge>
+                </div>
+                <div className="flex space-x-4">
+                  <button
+                    onClick={() => setShowEditor(false)}
+                    className="admin-btn-secondary"
+                  >
+                    Cancel
+                  </button>
+                  <button className="admin-btn-primary" disabled>
+                    <CodeBracketIcon className="h-4 w-4" />
+                    Save Template
+                  </button>
                 </div>
               </div>
             </div>
