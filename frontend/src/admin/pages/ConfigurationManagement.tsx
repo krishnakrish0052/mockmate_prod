@@ -80,7 +80,8 @@ const ConfigurationManagement: React.FC = () => {
   const fetchConfigurations = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/admin/config', {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${apiBaseUrl}/admin/config`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('admin_token')}`,
           'Content-Type': 'application/json',
@@ -127,7 +128,8 @@ const ConfigurationManagement: React.FC = () => {
         return;
       }
 
-      const response = await fetch('/api/admin/config', {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${apiBaseUrl}/admin/config`, {
         method: 'PATCH',
         headers: {
           Authorization: `Bearer ${localStorage.getItem('admin_token')}`,
@@ -164,7 +166,8 @@ const ConfigurationManagement: React.FC = () => {
   const regenerateEnvFile = async () => {
     setRegeneratingEnv(true);
     try {
-      const response = await fetch(`/api/admin/config/regenerate-env`, {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${apiBaseUrl}/admin/config/regenerate-env`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${localStorage.getItem('admin_token')}`,

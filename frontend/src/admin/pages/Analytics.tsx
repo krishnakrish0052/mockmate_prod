@@ -67,18 +67,20 @@ const Analytics: React.FC = () => {
         throw new Error('No authentication token');
       }
 
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+
       // Fetch data from multiple endpoints
       const [overviewRes, usersRes, sessionsRes, revenueRes] = await Promise.all([
-        fetch('/api/admin/analytics/overview', {
+        fetch(`${apiBaseUrl}/admin/analytics/overview`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        fetch(`/api/admin/analytics/users?period=${timeRange}`, {
+        fetch(`${apiBaseUrl}/admin/analytics/users?period=${timeRange}`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        fetch(`/api/admin/analytics/sessions?period=${timeRange}`, {
+        fetch(`${apiBaseUrl}/admin/analytics/sessions?period=${timeRange}`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        fetch(`/api/admin/analytics/revenue?period=${timeRange}`, {
+        fetch(`${apiBaseUrl}/admin/analytics/revenue?period=${timeRange}`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
       ]);

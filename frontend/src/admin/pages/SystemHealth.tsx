@@ -74,8 +74,9 @@ const SystemHealth: React.FC = () => {
   const fetchSystemStats = async () => {
     try {
       const token = localStorage.getItem('adminToken') || localStorage.getItem('admin_token');
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
-      const response = await fetch('/api/admin/system/health', {
+      const response = await fetch(`${apiBaseUrl}/admin/system/health`, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -136,8 +137,9 @@ const SystemHealth: React.FC = () => {
   const fetchPaymentConfigurations = async () => {
     try {
       const token = localStorage.getItem('adminToken') || localStorage.getItem('admin_token');
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
-      const response = await fetch('/api/admin/payment-configs', {
+      const response = await fetch(`${apiBaseUrl}/admin/payment-configs`, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',

@@ -111,8 +111,9 @@ adminAxios.interceptors.response.use(
       try {
         const refreshToken = localStorage.getItem('admin_refresh_token');
         if (refreshToken) {
-          // Create a new axios instance for the refresh call to avoid circular dependency
-          const refreshResponse = await axios.post('/api/admin/refresh', {
+          // Use environment variable for refresh call to avoid hardcoded path
+          const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+          const refreshResponse = await axios.post(`${apiBaseUrl}/admin/refresh`, {
             refreshToken: refreshToken,
           });
 
