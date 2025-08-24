@@ -13,12 +13,21 @@ const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
 async function applyMigration() {
+    // Debug environment variables
+    console.log('Database connection config:');
+    console.log('HOST:', process.env.DATABASE_HOST);
+    console.log('PORT:', process.env.DATABASE_PORT);
+    console.log('DATABASE:', process.env.DATABASE_NAME);
+    console.log('USER:', process.env.DATABASE_USER);
+    console.log('PASSWORD type:', typeof process.env.DATABASE_PASSWORD);
+    console.log('PASSWORD length:', process.env.DATABASE_PASSWORD ? process.env.DATABASE_PASSWORD.length : 'undefined');
+    
     const pool = new Pool({
         host: process.env.DATABASE_HOST,
-        port: process.env.DATABASE_PORT,
+        port: parseInt(process.env.DATABASE_PORT) || 5432,
         database: process.env.DATABASE_NAME,
         user: process.env.DATABASE_USER,
-        password: (process.env.DATABASE_PASSWORD || '').toString().trim(),
+        password: String(process.env.DATABASE_PASSWORD || '').trim(),
     });
 
     try {
