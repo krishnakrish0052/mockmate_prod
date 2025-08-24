@@ -1,5 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useAdminAuth } from '../../contexts/AdminAuthContext';
+import {
+  TerminalWindow,
+  TypingText,
+  CliCard,
+  CliBadge,
+  CliButton,
+  CliInput,
+  MatrixRain,
+} from '../ui/CliComponents';
 import './AppManagement.css';
 
 interface Platform {
