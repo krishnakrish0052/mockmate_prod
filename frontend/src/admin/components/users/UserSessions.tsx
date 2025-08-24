@@ -81,9 +81,10 @@ const UserSessions: React.FC<UserSessionsProps> = ({ userId, className = '' }) =
         include_inactive: showInactive.toString()
       });
 
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
       const endpoint = userId 
-        ? `/api/admin/users-enhanced/${userId}/sessions?${params}`
-        : `/api/admin/user-sessions?${params}`;
+        ? `${apiBaseUrl}/admin/users-enhanced/${userId}/sessions?${params}`
+        : `${apiBaseUrl}/admin/user-sessions?${params}`;
 
       const response = await fetch(endpoint, {
         headers: {
@@ -112,7 +113,8 @@ const UserSessions: React.FC<UserSessionsProps> = ({ userId, className = '' }) =
     }
 
     try {
-      const response = await fetch(`/api/admin/user-sessions/${sessionId}/terminate`, {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${apiBaseUrl}/admin/user-sessions/${sessionId}/terminate`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('admin_token')}`,
@@ -139,7 +141,8 @@ const UserSessions: React.FC<UserSessionsProps> = ({ userId, className = '' }) =
     }
 
     try {
-      const response = await fetch('/api/admin/user-sessions/bulk-terminate', {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${apiBaseUrl}/admin/user-sessions/bulk-terminate`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('admin_token')}`,

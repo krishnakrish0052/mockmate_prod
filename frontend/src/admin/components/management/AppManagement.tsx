@@ -114,10 +114,12 @@ const AppManagement: React.FC = () => {
     await Promise.all([fetchPlatforms(), fetchVersions(), fetchStatistics()]);
   };
 
-  const apiCall = async (url: string, options: RequestInit = {}) => {
+  const apiCall = async (endpoint: string, options: RequestInit = {}) => {
     if (!token) {
       throw new Error('No authentication token available');
     }
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+    const url = `${apiBaseUrl}${endpoint}`;
     const response = await fetch(url, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -219,7 +221,8 @@ const AppManagement: React.FC = () => {
         setLoading(false);
       });
 
-      xhr.open('POST', '/api/admin/apps/versions/upload');
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      xhr.open('POST', `${apiBaseUrl}/admin/apps/versions/upload`);
       xhr.setRequestHeader('Authorization', `Bearer ${token}`);
       xhr.send(formData);
     } catch (err) {

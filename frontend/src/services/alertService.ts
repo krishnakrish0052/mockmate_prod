@@ -61,7 +61,7 @@ export interface AlertTemplate {
 
 class AlertService {
   private getAuthHeaders(): Record<string, string> {
-    const token = localStorage.getItem('accessToken');
+    const token = localStorage.getItem('admin_token');
     return {
       'Content-Type': 'application/json',
       ...(token && { Authorization: `Bearer ${token}` }),

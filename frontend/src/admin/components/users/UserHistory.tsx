@@ -103,9 +103,10 @@ const UserHistory: React.FC<UserHistoryProps> = ({ userId, className = '' }) => 
         search: filters.search,
       });
 
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
       const endpoint = userId
-        ? `/api/admin/users-enhanced/${userId}/history?${params}`
-        : `/api/admin/user-history?${params}`;
+        ? `${apiBaseUrl}/admin/users-enhanced/${userId}/history?${params}`
+        : `${apiBaseUrl}/admin/user-history?${params}`;
 
       const response = await fetch(endpoint, {
         headers: {
