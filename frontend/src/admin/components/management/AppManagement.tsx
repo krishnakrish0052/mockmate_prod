@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAdminAuth } from '../../contexts/AdminAuthContext';
+import './AppManagement.css';
 
 interface Platform {
   id: string;

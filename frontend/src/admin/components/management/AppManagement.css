@@ -157,9 +157,14 @@
 }
 
 .alert-error {
-  background: #fee2e2;
-  color: #dc2626;
-  border: 1px solid #fecaca;
+  background: linear-gradient(135deg, rgba(255, 0, 0, 0.1) 0%, rgba(139, 0, 0, 0.1) 100%);
+  color: #ff4444;
+  border: 1px solid #ff4444;
+  font-family: 'JetBrains Mono', monospace;
+  text-shadow: 0 0 5px rgba(255, 68, 68, 0.3);
+  box-shadow:
+    0 0 20px rgba(255, 68, 68, 0.1),
+    inset 0 1px 0 rgba(255, 68, 68, 0.1);
 }
 
 .alert-close {
