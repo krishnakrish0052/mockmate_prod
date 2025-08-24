@@ -134,7 +134,17 @@ app.use(
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+    allowedHeaders: [
+      'Content-Type', 
+      'Authorization', 
+      'X-Requested-With', 
+      'Accept', 
+      'Origin',
+      'X-File-Name',
+      'Cache-Control',
+      'X-Requested-With'
+    ],
+    exposedHeaders: ['Content-Length', 'X-File-Hash'],
     preflightContinue: false,
     optionsSuccessStatus: 204
   })
@@ -147,15 +157,19 @@ const limiter = rateLimit({
   message: {
     error: 'Too many requests from this IP, please try again later.',
   },
+  skip: (req) => {
+    // Skip rate limiting for file uploads (they take longer and are typically one-off)
+    return req.path.includes('/upload') || req.path.includes('/versions/upload');
+  }
 });
 app.use('/api/', limiter);
 
 // Logging
 app.use(morgan('combined', { stream: { write: message => logger.info(message.trim()) } }));
 
-// Body parsing middleware
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+// Body parsing middleware  
+app.use(express.json({ limit: '500mb' }));
+app.use(express.urlencoded({ extended: true, limit: '500mb' }));
 
 // Static files for uploaded resumes
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
