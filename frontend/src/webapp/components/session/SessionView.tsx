@@ -13,7 +13,7 @@ import {
   StopCircleIcon,
   DocumentDuplicateIcon,
 } from '@heroicons/react/24/outline';
-import axios from 'axios';
+import { apiCall } from '../../../utils/apiUtils';
 import {
   TerminalWindow,
   TypingText,
@@ -77,8 +77,8 @@ const SessionView: React.FC = () => {
 
   const fetchSession = async () => {
     try {
-      const response = await axios.get(`/api/sessions/${sessionId}`);
-      setSession(response.data.session);
+      const response = await apiCall(`/sessions/${sessionId}`);
+      setSession(response.session);
     } catch (error) {
       console.error('Failed to fetch session:', error);
       navigate('/dashboard');
@@ -89,15 +89,15 @@ const SessionView: React.FC = () => {
 
   const fetchSessionStatus = async () => {
     try {
-      const response = await axios.get(`/api/sessions/${sessionId}`);
+      const response = await apiCall(`/sessions/${sessionId}`);
       setSession(prev =>
         prev
           ? {
               ...prev,
-              status: response.data.session.status,
-              desktopConnected: response.data.session.desktopConnected,
+              status: response.session.status,
+              desktopConnected: response.session.desktopConnected,
             }
-          : response.data.session
+          : response.session
       );
     } catch (error) {
       console.error('Failed to fetch session status:', error);
@@ -246,9 +246,12 @@ const SessionView: React.FC = () => {
 
     try {
       // Call the new dedicated stop endpoint
-      const response = await axios.post(`/api/sessions/${sessionId}/stop`, {
-        reason: 'Stopped from web interface',
-        forceStop: false,
+      const response = await apiCall(`/sessions/${sessionId}/stop`, {
+        method: 'POST',
+        body: JSON.stringify({
+          reason: 'Stopped from web interface',
+          forceStop: false,
+        })
       });
 
       // Update local session state with the response
@@ -256,8 +259,8 @@ const SessionView: React.FC = () => {
         prev
           ? {
               ...prev,
-              status: response.data.session.status,
-              completedAt: response.data.session.stoppedAt,
+              status: response.session.status,
+              completedAt: response.session.stoppedAt,
               desktopConnected: false,
             }
           : null
@@ -270,7 +273,7 @@ const SessionView: React.FC = () => {
     } catch (error: any) {
       console.error('Failed to stop session:', error);
       setStopError(
-        error.response?.data?.error ||
+        error.message ||
           'Failed to stop session. Please try again or contact support.'
       );
     } finally {

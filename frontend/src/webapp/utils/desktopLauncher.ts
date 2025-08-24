@@ -3,6 +3,8 @@
  * Handles launching the MockMate desktop app with proper user gesture handling
  */
 
+import { apiCall } from '../../utils/apiUtils';
+
 export interface LaunchOptions {
   token?: string;
   userId?: string;
@@ -56,20 +58,11 @@ export const launchDesktopApp = async (
     // Generate temporary authentication token
     let tempToken: string;
     try {
-      const tokenResponse = await fetch(`/api/sessions/${sessionId}/generate-desktop-token`, {
+      const tokenData = await apiCall(`/sessions/${sessionId}/generate-desktop-token`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token || localStorage.getItem('auth_token')}`,
-        },
         body: JSON.stringify({}),
       });
 
-      if (!tokenResponse.ok) {
-        throw new Error(`Failed to generate desktop token: ${tokenResponse.status}`);
-      }
-
-      const tokenData = await tokenResponse.json();
       tempToken = tokenData.tempToken;
       console.log('Generated temporary desktop token:', tempToken.substring(0, 8) + '...');
     } catch (tokenError) {
@@ -409,8 +402,7 @@ export const monitorDesktopConnection = (
 
     try {
       // Try to detect if desktop app is running with this session
-      const response = await fetch(`/api/sessions/${sessionId}/desktop-status`);
-      const data = await response.json();
+      const data = await apiCall(`/sessions/${sessionId}/desktop-status`);
 
       if (callback && typeof callback === 'function') {
         callback({
@@ -459,11 +451,8 @@ export const sendDesktopMessage = async (
   data: any = {}
 ): Promise<boolean> => {
   try {
-    const response = await fetch(`/api/sessions/${sessionId}/desktop-message`, {
+    await apiCall(`/sessions/${sessionId}/desktop-message`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify({
         action,
         data,
@@ -472,7 +461,7 @@ export const sendDesktopMessage = async (
       }),
     });
 
-    return response.ok;
+    return true;
   } catch (error) {
     console.error('Failed to send desktop message:', error);
     return false;
