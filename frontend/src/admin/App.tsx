@@ -14,6 +14,7 @@ import Revenue from './pages/Revenue';
 import SystemHealth from './pages/SystemHealth';
 import Reports from './pages/Reports';
 import EmailCampaigns from './pages/EmailCampaigns';
+import EmailTemplates from './pages/EmailTemplates';
 import IconManagement from './pages/IconManagement';
 import AppManagement from './pages/AppManagement';
 import PolicyManagement from './components/PolicyManagement';
@@ -136,6 +137,9 @@ function App() {
 
             {/* Email Campaigns */}
             <Route path='email-campaigns' element={<EmailCampaigns />} />
+
+            {/* Email Templates */}
+            <Route path='email-templates' element={<EmailTemplates />} />
 
             {/* Icon Management */}
             <Route path='icon-management' element={<IconManagement />} />
