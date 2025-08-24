@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en" style="background-color: #0a0a0a;">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Successful - MockMate</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', 'JetBrains Mono', monospace; background-color: #0a0a0a; color: #ffffff; line-height: 1.6; }
+        .email-container { max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #0a0a0a, #1a1a1a); border: 1px solid #333333; border-radius: 8px; box-shadow: 0 0 20px rgba(255, 215, 0, 0.1); }
+        .cli-header { background: linear-gradient(90deg, #1a1a1a, #333333); border-bottom: 1px solid #ffbf00; border-radius: 8px 8px 0 0; padding: 20px; }
+        .terminal-title { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #ffd700; }
+        .cli-path { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #00ff00; opacity: 0.8; }
+        .email-content { padding: 30px 25px; }
+        .terminal-prompt { font-family: 'JetBrains Mono', monospace; color: #00ff00; font-weight: 700; margin-right: 8px; }
+        .terminal-prompt::before { content: '$ '; }
+        .cli-text { font-family: 'JetBrains Mono', monospace; color: #ffffff; line-height: 1.4; }
+        .cli-command { background: rgba(255, 215, 0, 0.1); border: 1px solid rgba(255, 215, 0, 0.3); border-radius: 4px; padding: 12px 15px; font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #ffd700; margin: 15px 0; }
+        .cli-command::before { content: '> '; color: #00ff00; font-weight: 700; }
+        .cli-button { display: inline-block; background: linear-gradient(135deg, #ffd700, #ffbf00); color: #0a0a0a; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-family: 'Inter', sans-serif; font-weight: 600; font-size: 14px; margin: 5px 10px 5px 0; box-shadow: 0 0 10px rgba(255, 215, 0, 0.3); }
+        .cli-success-box { background: rgba(0, 255, 0, 0.05); border-left: 4px solid #00ff00; padding: 15px 20px; margin: 20px 0; border-radius: 0 6px 6px 0; }
+        .cli-info-box { background: rgba(0, 255, 255, 0.05); border-left: 4px solid #00ffff; padding: 15px 20px; margin: 20px 0; border-radius: 0 6px 6px 0; }
+        .cli-highlight { color: #ffd700; font-weight: 600; }
+        .invoice-section { background: rgba(0, 0, 0, 0.3); border: 1px solid #333333; border-radius: 6px; padding: 20px; margin: 20px 0; }
+        .invoice-table { width: 100%; border-collapse: collapse; margin: 15px 0; font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+        .invoice-table th { background: rgba(255, 215, 0, 0.1); border: 1px solid rgba(255, 215, 0, 0.3); padding: 8px 12px; text-align: left; color: #ffd700; font-weight: 600; }
+        .invoice-table td { border: 1px solid #333333; padding: 8px 12px; color: #ffffff; }
+        .total-row { background: rgba(255, 215, 0, 0.05); font-weight: 600; }
+        .ascii-money { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #ffd700; text-align: center; margin: 20px 0; white-space: pre-line; }
+        .cli-footer { background: #1a1a1a; border-top: 1px solid #333333; border-radius: 0 0 8px 8px; padding: 20px 25px; font-size: 12px; color: #666666; text-align: center; }
+        .cli-logo { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #ffd700; }
+        @media only screen and (max-width: 600px) { .email-container { margin: 10px; } .email-content { padding: 20px 15px; } .invoice-table { font-size: 11px; } }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="cli-header">
+            <div class="terminal-title">MockMate Terminal</div>
+            <div class="cli-path">~/mockmate/billing/payment-success</div>
+        </div>
+        
+        <div class="email-content">
+            <div class="ascii-money">
+💰 PAYMENT SUCCESSFUL 💰
+   Transaction completed...
+            </div>
+            
+            <div class="cli-success-box">
+                <div class="cli-text">
+                    <span class="terminal-prompt"></span><strong>Payment processed successfully!</strong>
+                </div>
+                <p style="margin-top: 10px;">Thank you <span class="cli-highlight">John Doe</span>! Your Professional Plan subscription is now active.</p>
+            </div>
+            
+            <div class="cli-command">billing --success --plan="Professional Plan" --amount="29.99" --next-billing="September 24, 2024"</div>
+            
+            <div class="invoice-section">
+                <div class="cli-text" style="margin-bottom: 15px;">
+                    <span class="terminal-prompt"></span><strong style="color: #00ffff;">Invoice #INV-2024-001234</strong>
+                </div>
+                
+                <table class="invoice-table">
+                    <tr>
+                        <th>Description</th>
+                        <th>Period</th>
+                        <th>Amount</th>
+                    </tr>
+                    <tr>
+                        <td>Professional Plan Subscription</td>
+                        <td>Monthly</td>
+                        <td>$29.99</td>
+                    </tr>
+                    <tr class="total-row">
+                        <td><strong>Total</strong></td>
+                        <td>-</td>
+                        <td><strong>$29.99</strong></td>
+                    </tr>
+                </table>
+                
+                <p style="margin-top: 15px; font-size: 12px; color: #cccccc;">
+                    Payment Method: Visa ending in 1234<br>
+                    Transaction ID: txn_1234567890
+                </p>
+            </div>
+            
+            <div style="text-align: center; margin: 25px 0;">
+                <a href="https://mockmate.ai/invoices/123" class="cli-button">📄 Download Invoice</a>
+                <a href="https://mockmate.ai/billing" class="cli-button" style="background: transparent; color: #00ffff; border: 1px solid #00ffff;">⚙️ Manage Billing</a>
+            </div>
+            
+            <div class="cli-info-box">
+                <div class="cli-text">
+                    <span class="terminal-prompt"></span><strong>Important Information:</strong>
+                </div>
+                <ul style="margin-top: 10px; padding-left: 20px; font-size: 13px;">
+                    <li style="margin: 5px 0;">Next billing date: <span class="cli-highlight">September 24, 2024</span></li>
+                    <li style="margin: 5px 0;">You can cancel or modify your subscription anytime</li>
+                    <li style="margin: 5px 0;">Questions? Contact our billing support team</li>
+                    <li style="margin: 5px 0;">All transactions are securely processed</li>
+                </ul>
+            </div>
+            
+            <div class="cli-command">Need help? Visit our billing FAQ or contact support 💬</div>
+        </div>
+        
+        <div class="cli-footer">
+            <div class="cli-logo">MockMate</div>
+            <p>AI-Powered Interview Platform</p>
+            <p style="margin-top: 5px; font-size: 11px;">
+                Questions about billing? Email: <span style="color: #ffd700;">billing@mockmate.ai</span>
+            </p>
+        </div>
+    </div>
+</body>
+</html>

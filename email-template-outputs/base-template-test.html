@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome to MockMate - Your AI Interview Platform</title>
+    <title>Test Email - MockMate - MockMate</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
         @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&display=swap');
@@ -151,17 +151,33 @@
             transform: translateY(-1px);
         }
         
-        .cli-success-box {
-            background: rgba(0, 255, 0, 0.05);
-            border-left: 4px solid #00ff00;
+        .cli-info-box {
+            background: rgba(0, 255, 255, 0.05);
+            border-left: 4px solid #00ffff;
             padding: 15px 20px;
             margin: 20px 0;
             border-radius: 0 6px 6px 0;
         }
         
-        .cli-info-box {
-            background: rgba(0, 255, 255, 0.05);
-            border-left: 4px solid #00ffff;
+        .cli-warning-box {
+            background: rgba(255, 191, 0, 0.05);
+            border-left: 4px solid #ffbf00;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 6px 6px 0;
+        }
+        
+        .cli-error-box {
+            background: rgba(239, 68, 68, 0.05);
+            border-left: 4px solid #ef4444;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 6px 6px 0;
+        }
+        
+        .cli-success-box {
+            background: rgba(0, 255, 0, 0.05);
+            border-left: 4px solid #00ff00;
             padding: 15px 20px;
             margin: 20px 0;
             border-radius: 0 6px 6px 0;
@@ -201,52 +217,65 @@
             text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
         }
         
+        .typing-cursor {
+            display: inline-block;
+            width: 2px;
+            height: 20px;
+            background-color: #ffd700;
+            margin-left: 2px;
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+        
+        .cli-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+        }
+        
+        .cli-table th {
+            background: rgba(255, 215, 0, 0.1);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            padding: 10px 12px;
+            text-align: left;
+            color: #ffd700;
+            font-weight: 600;
+        }
+        
+        .cli-table td {
+            border: 1px solid #333333;
+            padding: 8px 12px;
+            color: #ffffff;
+        }
+        
+        .cli-table tr:hover {
+            background: rgba(255, 215, 0, 0.05);
+        }
+        
         .cli-highlight {
             color: #ffd700;
             font-weight: 600;
         }
         
-        .cli-steps {
-            background: rgba(0, 0, 0, 0.2);
-            border: 1px solid #333333;
-            border-radius: 6px;
-            padding: 20px;
-            margin: 20px 0;
-        }
-        
-        .cli-step {
-            display: flex;
-            align-items: flex-start;
-            margin: 15px 0;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 14px;
-        }
-        
-        .cli-step-number {
-            background: #ffd700;
-            color: #0a0a0a;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            margin-right: 12px;
-            flex-shrink: 0;
-        }
-        
-        .cli-step-content {
-            flex: 1;
-        }
-        
-        .ascii-art {
-            font-family: 'JetBrains Mono', monospace;
+        .cli-muted {
+            color: #666666;
             font-size: 12px;
-            color: #ffd700;
-            text-align: center;
-            margin: 20px 0;
-            white-space: pre-line;
+        }
+        
+        .cli-code {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid #333333;
+            border-radius: 3px;
+            padding: 2px 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            color: #00ffff;
         }
         
         /* Responsive styles */
@@ -280,94 +309,12 @@
                 </div>
                 <div class="terminal-title">MockMate Terminal</div>
             </div>
-            <div class="cli-path">~/mockmate/welcome</div>
+            <div class="cli-path">~/mockmate/testing</div>
         </div>
         
         <!-- Content -->
         <div class="email-content">
-            <div class="ascii-art">
-╔══════════════════════════════════════════════════════════╗
-║                    WELCOME TO MOCKMATE                   ║
-║                  AI-Powered Interview Platform           ║
-╚══════════════════════════════════════════════════════════╝</div>
-            
-            <div class="cli-success-box">
-                <div class="cli-text">
-                    <span class="terminal-prompt"></span><strong>Account successfully created!</strong>
-                </div>
-                <p style="margin-top: 10px;">Hello <span class="cli-highlight">{{USER_NAME}}</span>, welcome to MockMate - your AI-powered interview platform.</p>
-            </div>
-            
-            <div class="cli-text" style="margin: 20px 0;">
-                <span class="terminal-prompt"></span>Initializing your MockMate experience...
-            </div>
-            
-            <div class="cli-command">mockmate --init --user="{{USER_EMAIL}}" --timestamp="{{REGISTRATION_TIMESTAMP}}" --welcome</div>
-            
-            <div class="cli-steps">
-                <h3 style="color: #ffd700; font-family: 'JetBrains Mono', monospace; margin-bottom: 20px;">
-                    <span class="terminal-prompt"></span>Quick Start Guide:
-                </h3>
-                
-                <div class="cli-step">
-                    <div class="cli-step-number">1</div>
-                    <div class="cli-step-content">
-                        <strong style="color: #00ffff;">Complete Your Profile</strong><br>
-                        <span style="color: #cccccc;">Set up your personal details, skills, and interview preferences</span>
-                    </div>
-                </div>
-                
-                <div class="cli-step">
-                    <div class="cli-step-number">2</div>
-                    <div class="cli-step-content">
-                        <strong style="color: #00ffff;">Practice Interview</strong><br>
-                        <span style="color: #cccccc;">Take your first AI-powered mock interview to assess your skills</span>
-                    </div>
-                </div>
-                
-                <div class="cli-step">
-                    <div class="cli-step-number">3</div>
-                    <div class="cli-step-content">
-                        <strong style="color: #00ffff;">Review & Improve</strong><br>
-                        <span style="color: #cccccc;">Get detailed feedback and recommendations to enhance your performance</span>
-                    </div>
-                </div>
-                
-                <div class="cli-step">
-                    <div class="cli-step-number">4</div>
-                    <div class="cli-step-content">
-                        <strong style="color: #00ffff;">Schedule Real Interviews</strong><br>
-                        <span style="color: #cccccc;">Connect with employers and ace your real interviews</span>
-                    </div>
-                </div>
-            </div>
-            
-            <div style="text-align: center; margin: 30px 0;">
-                <a href="{{LOGIN_URL}}" class="cli-button">Launch MockMate Platform</a>
-            </div>
-            
-            <div class="cli-info-box">
-                <div class="cli-text">
-                    <span class="terminal-prompt"></span><strong>What's Included:</strong>
-                </div>
-                <ul style="margin-top: 10px; padding-left: 20px; font-family: 'JetBrains Mono', monospace; font-size: 13px;">
-                    <li style="margin: 5px 0;">✓ AI-powered interview simulations</li>
-                    <li style="margin: 5px 0;">✓ Real-time feedback and scoring</li>
-                    <li style="margin: 5px 0;">✓ Industry-specific question banks</li>
-                    <li style="margin: 5px 0;">✓ Performance analytics dashboard</li>
-                    <li style="margin: 5px 0;">✓ Interview scheduling tools</li>
-                </ul>
-            </div>
-            
-            <div class="cli-divider"></div>
-            
-            <div class="cli-text" style="text-align: center;">
-                <span class="terminal-prompt"></span>Need help? Run: <span style="color: #00ffff;">mockmate --help</span> or contact our support team
-            </div>
-            
-            <div class="cli-command">
-                Support available 24/7 at: support@mockmate.ai
-            </div>
+            <div>This is placeholder content for testing the email template.</div>
         </div>
         
         <!-- Footer -->
@@ -377,9 +324,9 @@
                 <div style="margin-top: 10px;">
                     <p>AI-Powered Interview Platform</p>
                     <p style="margin-top: 5px;">
-                        <a href="{{UNSUBSCRIBE_URL}}">Unsubscribe</a> | 
-                        <a href="{{SUPPORT_URL}}">Support</a> | 
-                        <a href="{{WEBSITE_URL}}">Website</a>
+                        <a href="https://mockmate.ai/unsubscribe?token=unsubtoken123">Unsubscribe</a> | 
+                        <a href="https://mockmate.ai/support">Support</a> | 
+                        <a href="https://mockmate.ai">Website</a>
                     </p>
                 </div>
             </div>

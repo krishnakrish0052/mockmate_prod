@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en" style="background-color: #0a0a0a;">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>We'd Love Your Feedback - MockMate</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', 'JetBrains Mono', monospace; background-color: #0a0a0a; color: #ffffff; line-height: 1.6; }
+        .email-container { max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #0a0a0a, #1a1a1a); border: 1px solid #333333; border-radius: 8px; box-shadow: 0 0 20px rgba(255, 215, 0, 0.1); }
+        .cli-header { background: linear-gradient(90deg, #1a1a1a, #333333); border-bottom: 1px solid #ffbf00; border-radius: 8px 8px 0 0; padding: 20px; }
+        .terminal-title { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #ffd700; }
+        .cli-path { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #00ff00; opacity: 0.8; }
+        .email-content { padding: 30px 25px; }
+        .terminal-prompt { font-family: 'JetBrains Mono', monospace; color: #00ff00; font-weight: 700; margin-right: 8px; }
+        .terminal-prompt::before { content: '$ '; }
+        .cli-text { font-family: 'JetBrains Mono', monospace; color: #ffffff; line-height: 1.4; }
+        .cli-command { background: rgba(255, 215, 0, 0.1); border: 1px solid rgba(255, 215, 0, 0.3); border-radius: 4px; padding: 12px 15px; font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #ffd700; margin: 15px 0; }
+        .cli-command::before { content: '> '; color: #00ff00; font-weight: 700; }
+        .cli-button { display: inline-block; background: linear-gradient(135deg, #ffd700, #ffbf00); color: #0a0a0a; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-family: 'Inter', sans-serif; font-weight: 600; font-size: 14px; margin: 5px 10px 5px 0; box-shadow: 0 0 10px rgba(255, 215, 0, 0.3); }
+        .cli-info-box { background: rgba(0, 255, 255, 0.05); border-left: 4px solid #00ffff; padding: 15px 20px; margin: 20px 0; border-radius: 0 6px 6px 0; }
+        .cli-success-box { background: rgba(0, 255, 0, 0.05); border-left: 4px solid #00ff00; padding: 15px 20px; margin: 20px 0; border-radius: 0 6px 6px 0; }
+        .cli-highlight { color: #ffd700; font-weight: 600; }
+        .rating-section { background: rgba(0, 255, 255, 0.03); border: 1px solid rgba(0, 255, 255, 0.2); border-radius: 6px; padding: 20px; margin: 20px 0; }
+        .rating-item { display: flex; justify-content: space-between; align-items: center; margin: 15px 0; font-family: 'JetBrains Mono', monospace; font-size: 14px; }
+        .rating-buttons { display: flex; gap: 8px; }
+        .rating-btn { width: 35px; height: 35px; border: 2px solid #333333; border-radius: 6px; background: rgba(0, 0, 0, 0.3); color: #cccccc; font-family: 'JetBrains Mono', monospace; font-weight: 700; text-decoration: none; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; }
+        .rating-btn:hover { border-color: #ffd700; color: #ffd700; background: rgba(255, 215, 0, 0.1); }
+        .ascii-feedback { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #00ffff; text-align: center; margin: 20px 0; white-space: pre-line; }
+        .cli-footer { background: #1a1a1a; border-top: 1px solid #333333; border-radius: 0 0 8px 8px; padding: 20px 25px; font-size: 12px; color: #666666; text-align: center; }
+        .cli-logo { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #ffd700; }
+        @media only screen and (max-width: 600px) { .email-container { margin: 10px; } .email-content { padding: 20px 15px; } .rating-buttons { flex-wrap: wrap; } }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="cli-header">
+            <div class="terminal-title">MockMate Terminal</div>
+            <div class="cli-path">~/mockmate/feedback-request</div>
+        </div>
+        
+        <div class="email-content">
+            <div class="ascii-feedback">
+💭 FEEDBACK REQUEST 💭
+   Your input matters...
+            </div>
+            
+            <div class="cli-success-box">
+                <div class="cli-text">
+                    <span class="terminal-prompt"></span><strong>Thank you for using MockMate!</strong>
+                </div>
+                <p style="margin-top: 10px;">Hi <span class="cli-highlight">John Doe</span>, we hope you had a great experience with our platform.</p>
+            </div>
+            
+            <div class="cli-command">feedback --request --user="john.doe@example.com" --session="sess_123456"</div>
+            
+            <p style="margin: 20px 0; font-family: 'Inter', sans-serif;">
+                Your feedback helps us improve MockMate for everyone. It only takes 2 minutes to share your thoughts about your recent Technical Interview experience.
+            </p>
+            
+            <div class="rating-section">
+                <div class="cli-text" style="margin-bottom: 20px;">
+                    <span class="terminal-prompt"></span><strong style="color: #00ffff;">Quick Rating (1-5 stars):</strong>
+                </div>
+                
+                <div class="rating-item">
+                    <span>Overall Experience:</span>
+                    <div class="rating-buttons">
+                        <a href="https://mockmate.ai/feedback/sess_123456?rating=1&category=overall" class="rating-btn">1</a>
+                        <a href="https://mockmate.ai/feedback/sess_123456?rating=2&category=overall" class="rating-btn">2</a>
+                        <a href="https://mockmate.ai/feedback/sess_123456?rating=3&category=overall" class="rating-btn">3</a>
+                        <a href="https://mockmate.ai/feedback/sess_123456?rating=4&category=overall" class="rating-btn">4</a>
+                        <a href="https://mockmate.ai/feedback/sess_123456?rating=5&category=overall" class="rating-btn">5</a>
+                    </div>
+                </div>
+                
+                <div class="rating-item">
+                    <span>Platform Usability:</span>
+                    <div class="rating-buttons">
+                        <a href="https://mockmate.ai/feedback/sess_123456?rating=1&category=usability" class="rating-btn">1</a>
+                        <a href="https://mockmate.ai/feedback/sess_123456?rating=2&category=usability" class="rating-btn">2</a>
+                        <a href="https://mockmate.ai/feedback/sess_123456?rating=3&category=usability" class="rating-btn">3</a>
+                        <a href="https://mockmate.ai/feedback/sess_123456?rating=4&category=usability" class="rating-btn">4</a>
+                        <a href="https://mockmate.ai/feedback/sess_123456?rating=5&category=usability" class="rating-btn">5</a>
+                    </div>
+                </div>
+                
+                <div class="rating-item">
+                    <span>AI Quality:</span>
+                    <div class="rating-buttons">
+                        <a href="https://mockmate.ai/feedback/sess_123456?rating=1&category=ai-quality" class="rating-btn">1</a>
+                        <a href="https://mockmate.ai/feedback/sess_123456?rating=2&category=ai-quality" class="rating-btn">2</a>
+                        <a href="https://mockmate.ai/feedback/sess_123456?rating=3&category=ai-quality" class="rating-btn">3</a>
+                        <a href="https://mockmate.ai/feedback/sess_123456?rating=4&category=ai-quality" class="rating-btn">4</a>
+                        <a href="https://mockmate.ai/feedback/sess_123456?rating=5&category=ai-quality" class="rating-btn">5</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin: 25px 0;">
+                <a href="https://mockmate.ai/feedback/detailed" class="cli-button">📝 Leave Detailed Feedback</a>
+                <a href="https://mockmate.ai/survey/quick" class="cli-button" style="background: transparent; color: #00ffff; border: 1px solid #00ffff;">⚡ Quick Survey</a>
+            </div>
+            
+            <div class="cli-info-box">
+                <div class="cli-text">
+                    <span class="terminal-prompt"></span><strong>Help Us Improve:</strong>
+                </div>
+                <ul style="margin-top: 10px; padding-left: 20px; font-size: 13px;">
+                    <li style="margin: 5px 0;">🎯 What features would you like to see?</li>
+                    <li style="margin: 5px 0;">🐛 Did you encounter any issues?</li>
+                    <li style="margin: 5px 0;">💡 Any suggestions for improvement?</li>
+                    <li style="margin: 5px 0;">⭐ Would you recommend MockMate to others?</li>
+                </ul>
+            </div>
+            
+            <div class="cli-command">Your feedback drives our innovation! 🚀</div>
+        </div>
+        
+        <div class="cli-footer">
+            <div class="cli-logo">MockMate</div>
+            <p>AI-Powered Interview Platform</p>
+        </div>
+    </div>
+</body>
+</html>

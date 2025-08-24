@@ -413,10 +413,10 @@
                 <div class="cli-text">
                     <span class="terminal-prompt"></span><strong style="color: #00ff00;">Account registration detected!</strong>
                 </div>
-                <p style="margin-top: 10px;">Hello <span class="cli-highlight">{{USER_NAME}}</span>, thank you for joining the MockMate platform.</p>
+                <p style="margin-top: 10px;">Hello <span class="cli-highlight">John Doe</span>, thank you for joining the MockMate platform.</p>
             </div>
             
-            <div class="cli-command">auth --verify-email --user="{{USER_EMAIL}}" --timestamp="{{VERIFICATION_TIMESTAMP}}"</div>
+            <div class="cli-command">auth --verify-email --user="john.doe@example.com" --timestamp="2024-08-24 15:30:00 UTC"</div>
             
             <p style="margin: 20px 0; font-family: 'Inter', sans-serif;">
                 To complete your registration and secure your account, please verify your email address using the verification code below. 
@@ -425,13 +425,13 @@
             
             <div class="otp-display">
                 <div class="otp-label">Verification Code</div>
-                <div class="otp-code">{{VERIFICATION_CODE}}</div>
-                <div class="otp-expiry">Expires in {{EXPIRY_MINUTES}} minutes</div>
+                <div class="otp-code">123456</div>
+                <div class="otp-expiry">Expires in 15 minutes</div>
             </div>
             
             <div class="security-timer">
                 <div class="timer-label">Security Timer</div>
-                <div class="timer-display">{{EXPIRY_MINUTES}}:00</div>
+                <div class="timer-display">15:00</div>
                 <div class="timer-label">Minutes Remaining</div>
             </div>
             
@@ -448,8 +448,8 @@
             </div>
             
             <div style="text-align: center; margin: 25px 0;">
-                <a href="{{VERIFICATION_URL}}" class="cli-button">🔑 Verify Email Now</a>
-                <a href="{{RESEND_CODE_URL}}" class="cli-button secondary">🔄 Resend Code</a>
+                <a href="https://mockmate.ai/verify?token=abc123xyz789" class="cli-button">🔑 Verify Email Now</a>
+                <a href="https://mockmate.ai/resend-code" class="cli-button secondary">🔄 Resend Code</a>
             </div>
             
             <div class="cli-warning-box">
@@ -457,8 +457,8 @@
                     <span class="terminal-prompt"></span><strong style="color: #ffbf00;">Security Notice:</strong>
                 </div>
                 <ul style="margin-top: 10px; padding-left: 20px; font-family: 'Inter', sans-serif; font-size: 13px;">
-                    <li style="margin: 5px 0;">📧 This email was sent to: <span class="cli-highlight">{{USER_EMAIL}}</span></li>
-                    <li style="margin: 5px 0;">⏰ Code expires automatically in {{EXPIRY_MINUTES}} minutes</li>
+                    <li style="margin: 5px 0;">📧 This email was sent to: <span class="cli-highlight">john.doe@example.com</span></li>
+                    <li style="margin: 5px 0;">⏰ Code expires automatically in 15 minutes</li>
                     <li style="margin: 5px 0;">🔒 Never share this code with anyone</li>
                     <li style="margin: 5px 0;">❌ If you didn't request this, ignore this email</li>
                 </ul>
@@ -479,7 +479,7 @@
             <div class="cli-divider"></div>
             
             <div class="cli-text" style="text-align: center;">
-                <span class="terminal-prompt"></span>Need help? Contact support: <span style="color: #00ffff;">{{SUPPORT_EMAIL}}</span>
+                <span class="terminal-prompt"></span>Need help? Contact support: <span style="color: #00ffff;">support@mockmate.ai</span>
             </div>
             
             <div class="cli-command">
@@ -494,13 +494,13 @@
                 <div style="margin-top: 10px;">
                     <p>AI-Powered Interview Platform</p>
                     <p style="margin-top: 5px;">
-                        <a href="{{SUPPORT_URL}}">Support</a> | 
-                        <a href="{{WEBSITE_URL}}">Website</a> | 
-                        <a href="{{PRIVACY_URL}}">Privacy</a>
+                        <a href="https://mockmate.ai/support">Support</a> | 
+                        <a href="https://mockmate.ai">Website</a> | 
+                        <a href="https://mockmate.ai/privacy">Privacy</a>
                     </p>
                     <p style="margin-top: 5px; font-size: 10px; color: #444444;">
-                        This email was sent to {{USER_EMAIL}}<br>
-                        © {{CURRENT_YEAR}} MockMate. All rights reserved.
+                        This email was sent to john.doe@example.com<br>
+                        © 2024 MockMate. All rights reserved.
                     </p>
                 </div>
             </div>

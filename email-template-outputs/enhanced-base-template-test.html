@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Email Verification Required - MockMate</title>
+    <title>Test Email - MockMate - MockMate</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
         @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&display=swap');
@@ -24,6 +24,7 @@
             -moz-osx-font-smoothing: grayscale;
         }
         
+        /* Email Container */
         .email-container {
             max-width: 600px;
             margin: 0 auto;
@@ -35,6 +36,7 @@
             overflow: hidden;
         }
         
+        /* Terminal scanlines effect */
         .email-container::before {
             content: '';
             position: absolute;
@@ -53,6 +55,7 @@
             z-index: 1;
         }
         
+        /* CLI Header */
         .cli-header {
             background: linear-gradient(90deg, #1a1a1a, #333333);
             border-bottom: 1px solid #ffbf00;
@@ -116,12 +119,14 @@
             z-index: 3;
         }
         
+        /* Email Content */
         .email-content {
             padding: 30px 25px;
             position: relative;
             z-index: 2;
         }
         
+        /* Terminal elements */
         .terminal-prompt {
             font-family: 'JetBrains Mono', monospace;
             color: #00ff00;
@@ -158,6 +163,7 @@
             font-weight: 700;
         }
         
+        /* Buttons */
         .cli-button {
             display: inline-block;
             background: linear-gradient(135deg, #ffd700, #ffbf00);
@@ -180,21 +186,23 @@
             background: linear-gradient(135deg, #ffbf00, #e6a600);
             box-shadow: 0 0 25px rgba(255, 215, 0, 0.5);
             transform: translateY(-2px);
+            text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
         }
         
         .cli-button.secondary {
             background: transparent;
-            color: #00ffff;
-            border: 1px solid #00ffff;
-            box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
+            color: #ffd700;
+            border: 1px solid #ffd700;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
         }
         
         .cli-button.secondary:hover {
-            background: rgba(0, 255, 255, 0.1);
-            color: #00cccc;
-            border-color: #00cccc;
+            background: rgba(255, 215, 0, 0.1);
+            color: #ffbf00;
+            border-color: #ffbf00;
         }
         
+        /* Status boxes */
         .cli-info-box {
             background: rgba(0, 255, 255, 0.05);
             border-left: 4px solid #00ffff;
@@ -202,6 +210,7 @@
             padding: 15px 20px;
             margin: 20px 0;
             border-radius: 0 6px 6px 0;
+            position: relative;
         }
         
         .cli-warning-box {
@@ -211,6 +220,17 @@
             padding: 15px 20px;
             margin: 20px 0;
             border-radius: 0 6px 6px 0;
+            position: relative;
+        }
+        
+        .cli-error-box {
+            background: rgba(239, 68, 68, 0.05);
+            border-left: 4px solid #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 6px 6px 0;
+            position: relative;
         }
         
         .cli-success-box {
@@ -220,14 +240,10 @@
             padding: 15px 20px;
             margin: 20px 0;
             border-radius: 0 6px 6px 0;
+            position: relative;
         }
         
-        .cli-highlight {
-            color: #ffd700;
-            font-weight: 600;
-            text-shadow: 0 0 5px rgba(255, 215, 0, 0.3);
-        }
-        
+        /* Enhanced visual elements */
         .cli-divider {
             height: 1px;
             background: linear-gradient(90deg, transparent, #333333, #ffd700, #333333, transparent);
@@ -235,6 +251,19 @@
             position: relative;
         }
         
+        .cli-divider::after {
+            content: '';
+            position: absolute;
+            top: -1px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 3px;
+            background: #ffd700;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+        
+        /* Footer */
         .cli-footer {
             background: linear-gradient(180deg, #1a1a1a 0%, #0d0d0d 100%);
             border-top: 1px solid #333333;
@@ -267,102 +296,164 @@
             text-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
         }
         
-        /* OTP Code Display */
-        .otp-display {
-            background: rgba(0, 0, 0, 0.4);
-            border: 2px solid #00ff00;
-            border-radius: 8px;
-            padding: 25px;
-            margin: 25px 0;
-            text-align: center;
-            position: relative;
-        }
-        
-        .otp-display::before {
-            content: '';
-            position: absolute;
-            top: -2px;
-            left: -2px;
-            right: -2px;
-            bottom: -2px;
-            background: linear-gradient(45deg, #00ff00, #00ffff, #00ff00);
-            border-radius: 8px;
-            z-index: -1;
-            animation: border-glow 2s linear infinite;
-        }
-        
-        @keyframes border-glow {
-            0%, 100% { opacity: 0.5; }
-            50% { opacity: 1; }
-        }
-        
-        .otp-label {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 14px;
+        /* Utility classes */
+        .cli-highlight {
             color: #ffd700;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 15px;
+            font-weight: 600;
+            text-shadow: 0 0 5px rgba(255, 215, 0, 0.3);
         }
         
-        .otp-code {
+        .cli-muted {
+            color: #666666;
+            font-size: 12px;
+        }
+        
+        .cli-code {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid #333333;
+            border-radius: 3px;
+            padding: 2px 6px;
             font-family: 'JetBrains Mono', monospace;
-            font-size: 48px;
-            font-weight: 700;
-            color: #00ff00;
-            text-shadow: 0 0 20px rgba(0, 255, 0, 0.6);
-            margin: 15px 0;
-            letter-spacing: 8px;
-            position: relative;
+            font-size: 13px;
+            color: #00ffff;
         }
         
-        .otp-expiry {
+        /* Tables */
+        .cli-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            border: 1px solid #333333;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        
+        .cli-table th {
+            background: rgba(255, 215, 0, 0.1);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            padding: 12px;
+            text-align: left;
+            color: #ffd700;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .cli-table td {
+            border: 1px solid #333333;
+            padding: 10px 12px;
+            color: #ffffff;
+            background: rgba(0, 0, 0, 0.1);
+        }
+        
+        .cli-table tr:hover {
+            background: rgba(255, 215, 0, 0.05);
+        }
+        
+        .cli-table .highlight-row {
+            background: rgba(0, 255, 255, 0.05);
+            border-left: 3px solid #00ffff;
+        }
+        
+        /* ASCII Art containers */
+        .ascii-art {
             font-family: 'JetBrains Mono', monospace;
             font-size: 12px;
-            color: #ffbf00;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-top: 10px;
-        }
-        
-        .ascii-security {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 10px;
-            color: #00ffff;
+            color: #ffd700;
             text-align: center;
             margin: 20px 0;
             white-space: pre-line;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
         }
         
-        /* Security timer */
-        .security-timer {
-            background: rgba(255, 191, 0, 0.1);
-            border: 2px solid #ffbf00;
-            border-radius: 8px;
-            padding: 20px;
-            margin: 25px 0;
-            text-align: center;
-            position: relative;
+        /* Typing effect */
+        .typing-cursor {
+            display: inline-block;
+            width: 2px;
+            height: 20px;
+            background-color: #ffd700;
+            margin-left: 2px;
+            animation: blink 1s infinite;
         }
         
-        .timer-display {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 24px;
-            font-weight: 700;
-            color: #ffbf00;
-            text-shadow: 0 0 10px rgba(255, 191, 0, 0.5);
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+        
+        /* Progress bars */
+        .progress-bar {
+            background: rgba(51, 51, 51, 0.5);
+            border: 1px solid #333333;
+            border-radius: 4px;
+            height: 8px;
+            overflow: hidden;
             margin: 10px 0;
         }
         
-        .timer-label {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 12px;
-            color: #cccccc;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff00, #00cc00);
+            border-radius: 3px;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+            transition: width 0.3s ease;
         }
         
-        /* Responsive styles */
+        /* Status indicators */
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+            box-shadow: 0 0 5px currentColor;
+        }
+        
+        .status-online { background-color: #00ff00; }
+        .status-maintenance { background-color: #ffbf00; }
+        .status-offline { background-color: #ff4444; }
+        .status-warning { background-color: #ff8800; }
+        
+        /* Glitch effects for special elements */
+        .glitch {
+            position: relative;
+        }
+        
+        .glitch::before,
+        .glitch::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .glitch::before {
+            animation: glitch-anim-1 0.2s infinite linear alternate-reverse;
+            color: #ff0000;
+            z-index: -1;
+        }
+        
+        .glitch::after {
+            animation: glitch-anim-2 0.2s infinite linear alternate-reverse;
+            color: #00ffff;
+            z-index: -2;
+        }
+        
+        @keyframes glitch-anim-1 {
+            0% { clip: rect(64px, 9999px, 66px, 0); transform: skew(0.5deg); }
+            100% { clip: rect(70px, 9999px, 71px, 0); transform: skew(0.4deg); }
+        }
+        
+        @keyframes glitch-anim-2 {
+            0% { clip: rect(65px, 9999px, 119px, 0); transform: skew(0.1deg); }
+            100% { clip: rect(65px, 9999px, 119px, 0); transform: skew(0.5deg); }
+        }
+        
+        /* Responsive design */
         @media only screen and (max-width: 600px) {
             .email-container {
                 margin: 10px;
@@ -380,9 +471,47 @@
                 width: 100%;
             }
             
-            .otp-code {
-                font-size: 36px;
-                letter-spacing: 4px;
+            .cli-table {
+                font-size: 11px;
+            }
+            
+            .cli-table th,
+            .cli-table td {
+                padding: 8px;
+            }
+            
+            .terminal-title {
+                font-size: 12px;
+            }
+            
+            .ascii-art {
+                font-size: 10px;
+            }
+        }
+        
+        /* Dark mode enhancements */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background-color: #000000;
+            }
+            
+            .email-container {
+                background: linear-gradient(135deg, #000000, #111111);
+                box-shadow: 0 0 30px rgba(255, 215, 0, 0.15);
+            }
+        }
+        
+        /* Print styles */
+        @media print {
+            .email-container::before,
+            .cli-header::before {
+                display: none;
+            }
+            
+            .cli-button {
+                background: #ffffff !important;
+                color: #000000 !important;
+                border: 1px solid #000000 !important;
             }
         }
     </style>
@@ -399,92 +528,12 @@
                 </div>
                 <div class="terminal-title">MockMate Terminal</div>
             </div>
-            <div class="cli-path">~/mockmate/auth/email-verification</div>
+            <div class="cli-path">~/mockmate/testing</div>
         </div>
         
         <!-- Content -->
         <div class="email-content">
-            <div class="ascii-security">
-🔐 EMAIL VERIFICATION REQUIRED 🔐
-      Security protocol initiated...
-            </div>
-            
-            <div class="cli-success-box">
-                <div class="cli-text">
-                    <span class="terminal-prompt"></span><strong style="color: #00ff00;">Account registration detected!</strong>
-                </div>
-                <p style="margin-top: 10px;">Hello <span class="cli-highlight">{{USER_NAME}}</span>, thank you for joining the MockMate platform.</p>
-            </div>
-            
-            <div class="cli-command">auth --verify-email --user="{{USER_EMAIL}}" --timestamp="{{VERIFICATION_TIMESTAMP}}"</div>
-            
-            <p style="margin: 20px 0; font-family: 'Inter', sans-serif;">
-                To complete your registration and secure your account, please verify your email address using the verification code below. 
-                This step ensures that only you have access to your MockMate account.
-            </p>
-            
-            <div class="otp-display">
-                <div class="otp-label">Verification Code</div>
-                <div class="otp-code">{{VERIFICATION_CODE}}</div>
-                <div class="otp-expiry">Expires in {{EXPIRY_MINUTES}} minutes</div>
-            </div>
-            
-            <div class="security-timer">
-                <div class="timer-label">Security Timer</div>
-                <div class="timer-display">{{EXPIRY_MINUTES}}:00</div>
-                <div class="timer-label">Minutes Remaining</div>
-            </div>
-            
-            <div class="cli-info-box">
-                <div class="cli-text">
-                    <span class="terminal-prompt"></span><strong>How to Use This Code:</strong>
-                </div>
-                <ol style="margin-top: 10px; padding-left: 20px; font-family: 'Inter', sans-serif; font-size: 14px;">
-                    <li style="margin: 8px 0;">Return to the MockMate verification page</li>
-                    <li style="margin: 8px 0;">Enter the 6-digit code above</li>
-                    <li style="margin: 8px 0;">Click "Verify Email" to complete setup</li>
-                    <li style="margin: 8px 0;">Start practicing your interview skills!</li>
-                </ol>
-            </div>
-            
-            <div style="text-align: center; margin: 25px 0;">
-                <a href="{{VERIFICATION_URL}}" class="cli-button">🔑 Verify Email Now</a>
-                <a href="{{RESEND_CODE_URL}}" class="cli-button secondary">🔄 Resend Code</a>
-            </div>
-            
-            <div class="cli-warning-box">
-                <div class="cli-text">
-                    <span class="terminal-prompt"></span><strong style="color: #ffbf00;">Security Notice:</strong>
-                </div>
-                <ul style="margin-top: 10px; padding-left: 20px; font-family: 'Inter', sans-serif; font-size: 13px;">
-                    <li style="margin: 5px 0;">📧 This email was sent to: <span class="cli-highlight">{{USER_EMAIL}}</span></li>
-                    <li style="margin: 5px 0;">⏰ Code expires automatically in {{EXPIRY_MINUTES}} minutes</li>
-                    <li style="margin: 5px 0;">🔒 Never share this code with anyone</li>
-                    <li style="margin: 5px 0;">❌ If you didn't request this, ignore this email</li>
-                </ul>
-            </div>
-            
-            <div class="cli-info-box">
-                <div class="cli-text">
-                    <span class="terminal-prompt"></span><strong>Security Tips:</strong>
-                </div>
-                <ul style="margin-top: 10px; padding-left: 20px; font-family: 'Inter', sans-serif; font-size: 13px;">
-                    <li style="margin: 5px 0;">🛡️ MockMate will never ask for your verification code via phone</li>
-                    <li style="margin: 5px 0;">🔐 Always verify emails come from @mockmate.ai</li>
-                    <li style="margin: 5px 0;">⚠️ Report suspicious emails to our security team</li>
-                    <li style="margin: 5px 0;">💡 Use a strong, unique password for your account</li>
-                </ul>
-            </div>
-            
-            <div class="cli-divider"></div>
-            
-            <div class="cli-text" style="text-align: center;">
-                <span class="terminal-prompt"></span>Need help? Contact support: <span style="color: #00ffff;">{{SUPPORT_EMAIL}}</span>
-            </div>
-            
-            <div class="cli-command">
-                Welcome to MockMate! Let's get you started with AI-powered interview practice 🚀
-            </div>
+            <div>This is placeholder content for testing the email template.</div>
         </div>
         
         <!-- Footer -->
@@ -494,13 +543,13 @@
                 <div style="margin-top: 10px;">
                     <p>AI-Powered Interview Platform</p>
                     <p style="margin-top: 5px;">
-                        <a href="{{SUPPORT_URL}}">Support</a> | 
-                        <a href="{{WEBSITE_URL}}">Website</a> | 
-                        <a href="{{PRIVACY_URL}}">Privacy</a>
+                        <a href="https://mockmate.ai/unsubscribe?token=unsubtoken123">Unsubscribe</a> | 
+                        <a href="https://mockmate.ai/support">Support</a> | 
+                        <a href="https://mockmate.ai">Website</a>
                     </p>
                     <p style="margin-top: 5px; font-size: 10px; color: #444444;">
-                        This email was sent to {{USER_EMAIL}}<br>
-                        © {{CURRENT_YEAR}} MockMate. All rights reserved.
+                        MockMate • 123 Tech Street, San Francisco, CA 94105<br>
+                        © 2024 MockMate. All rights reserved.
                     </p>
                 </div>
             </div>
