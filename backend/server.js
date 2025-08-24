@@ -85,6 +85,7 @@ import { authenticateToken } from './middleware/auth.js';
 
 // Import debug routes
 import debugUploadRoutes from './debug-upload.js';
+import uploadTestRoutes from './routes/admin/uploadTest.js';
 
 const app = express();
 const server = http.createServer(app);
@@ -683,6 +684,9 @@ app.use(
 
 // Debug upload routes (temporary for debugging)
 app.use('/api/debug', debugUploadRoutes);
+
+// Test upload routes with manual CORS (temporary for debugging)
+app.use('/api/upload-test', uploadTestRoutes);
 
 // CORS test endpoint
 app.get('/api/cors-test', (req, res) => {
