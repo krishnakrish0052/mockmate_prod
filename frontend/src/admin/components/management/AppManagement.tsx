@@ -194,9 +194,21 @@ const AppManagement: React.FC = () => {
       }
       // Use fetch instead of XMLHttpRequest for better CORS handling
       const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
-      const uploadUrl = `${apiBaseUrl}/admin/apps/versions/upload`;
       
-      console.log('🚀 Starting upload to:', uploadUrl);
+      // TEMPORARY: Use small test upload to isolate CORS vs size issues
+      const uploadUrl = `${apiBaseUrl}/admin/apps/test-small-upload`;
+      
+      console.log('🚀 Starting SMALL TEST upload to:', uploadUrl);
+      console.log('🚀 This is a temporary test to isolate CORS issues');
+      
+      // For the test, just send a small JSON payload instead of FormData
+      const testData = {
+        test: true,
+        message: 'Testing CORS without large file',
+        timestamp: new Date().toISOString(),
+        fileSize: uploadForm.file?.size || 0,
+        fileName: uploadForm.file?.name || 'none'
+      };
       
       const response = await fetch(uploadUrl, {
         method: 'POST',

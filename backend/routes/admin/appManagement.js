@@ -165,6 +165,32 @@ router.get('/versions', requirePermission(['app.read']), async (req, res) => {
   }
 });
 
+// Small test upload to isolate CORS vs size issues
+router.post('/test-small-upload', requirePermission(['app.read']), (req, res) => {
+  try {
+    console.log('📝 Small upload test - Headers:', req.headers);
+    console.log('📝 Small upload test - Body size:', req.get('content-length') || 'unknown');
+    console.log('📝 Small upload test - Content-Type:', req.get('content-type'));
+    console.log('📝 Small upload test - Origin:', req.get('origin'));
+    
+    // Simple response without file processing
+    res.json({
+      success: true,
+      message: 'Small upload test successful - CORS working!',
+      headers: {
+        origin: req.get('origin'),
+        contentType: req.get('content-type'),
+        contentLength: req.get('content-length'),
+        userAgent: req.get('user-agent')
+      },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('❌ Small upload test error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Alternative CORS-friendly upload endpoint
 router.post(
   '/versions/upload-cors-bypass',
