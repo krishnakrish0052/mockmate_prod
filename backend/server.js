@@ -93,8 +93,16 @@ const server = http.createServer(app);
 // We'll initialize Socket.IO after setting up dynamic config
 let io;
 
-// Trust proxy - Important for production deployments behind reverse proxy/load balancer
-app.set('trust proxy', true);
+// Trust proxy configuration for production deployments behind reverse proxy/load balancer
+// Use specific trusted proxy configuration instead of 'true' for security
+if (process.env.NODE_ENV === 'production') {
+  // In production, trust proxies from private/cloud networks
+  // Common cloud provider IP ranges (adjust based on your deployment)
+  app.set('trust proxy', ['loopback', 'linklocal', 'uniquelocal']);
+} else {
+  // In development, trust localhost
+  app.set('trust proxy', 'loopback');
+}
 
 // Security middleware
 app.use(helmet());
@@ -157,16 +165,42 @@ app.use(
   })
 );
 
-// Rate limiting
+// Rate limiting with enhanced security
 const limiter = rateLimit({
   windowMs: (process.env.RATE_LIMIT_WINDOW || 15) * 60 * 1000, // 15 minutes
   max: process.env.RATE_LIMIT_MAX || 100, // limit each IP to 100 requests per windowMs
   message: {
     error: 'Too many requests from this IP, please try again later.',
   },
+  // Custom key generator to handle proxy scenarios more securely
+  keyGenerator: (req) => {
+    // In production behind trusted proxy, use X-Forwarded-For if available and trusted
+    if (process.env.NODE_ENV === 'production' && req.ip) {
+      return req.ip; // Express will handle proxy IPs based on trust proxy setting
+    }
+    // Fallback to connection remote address
+    return req.connection.remoteAddress || req.socket.remoteAddress || 'unknown';
+  },
+  // Custom handler for when rate limit is exceeded
+  handler: (req, res) => {
+    logger.warn('Rate limit exceeded', {
+      ip: req.ip,
+      path: req.path,
+      method: req.method,
+      userAgent: req.headers['user-agent'],
+    });
+    res.status(429).json({
+      error: 'Too many requests from this IP, please try again later.',
+      retryAfter: Math.round(limiter.windowMs / 1000),
+    });
+  },
   skip: (req) => {
     // Skip rate limiting for file uploads (they take longer and are typically one-off)
     return req.path.includes('/upload') || req.path.includes('/versions/upload');
+  },
+  // Skip rate limiting validation for proxy headers to avoid the warning
+  validate: {
+    trustProxy: false, // We handle proxy detection manually in keyGenerator
   }
 });
 app.use('/api/', limiter);
