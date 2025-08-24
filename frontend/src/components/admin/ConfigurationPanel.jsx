@@ -60,7 +60,8 @@ const ConfigurationPanel = ({ configurations, onConfigurationChange, showSnackba
     if (!configToDelete) return;
 
     try {
-      const response = await fetch(`/api/admin/payment-configs/${configToDelete.id}`, {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
+      const response = await fetch(`${apiBaseUrl}/admin/payment-configs/${configToDelete.id}`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${localStorage.getItem('adminToken')}`,
@@ -85,7 +86,8 @@ const ConfigurationPanel = ({ configurations, onConfigurationChange, showSnackba
 
   const handleToggleStatus = async (config, newStatus) => {
     try {
-      const response = await fetch(`/api/admin/payment-configs/${config.id}/toggle-status`, {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
+      const response = await fetch(`${apiBaseUrl}/admin/payment-configs/${config.id}/toggle-status`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${localStorage.getItem('adminToken')}`,
@@ -109,7 +111,8 @@ const ConfigurationPanel = ({ configurations, onConfigurationChange, showSnackba
   const handleTestConfig = async config => {
     setTestingConfig(config.id);
     try {
-      const response = await fetch(`/api/admin/payment-configs/${config.id}/test`, {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
+      const response = await fetch(`${apiBaseUrl}/admin/payment-configs/${config.id}/test`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${localStorage.getItem('adminToken')}`,

@@ -50,8 +50,9 @@ const ResumeManagerDebug: React.FC = () => {
 
   const fetchResumes = async () => {
     try {
-      console.log('🔍 [DEBUG] Fetching resumes from /api/resumes');
-      const response = await axios.get('/api/resumes');
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
+      console.log('🔍 [DEBUG] Fetching resumes from', `${apiBaseUrl}/resumes`);
+      const response = await axios.get(`${apiBaseUrl}/resumes`);
 
       console.log('📊 [DEBUG] Raw API Response:', response.data);
       console.log('📋 [DEBUG] Response.data.resumes:', response.data.resumes);
@@ -94,7 +95,8 @@ const ResumeManagerDebug: React.FC = () => {
 
     setDeleting(resumeId);
     try {
-      await axios.delete(`/api/resumes/${resumeId}`);
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
+      await axios.delete(`${apiBaseUrl}/resumes/${resumeId}`);
       setResumes(resumes.filter(r => r.id !== resumeId));
     } catch (error) {
       console.error('Failed to delete resume:', error);

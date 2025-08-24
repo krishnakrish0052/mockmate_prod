@@ -38,7 +38,8 @@ const AppDownload: React.FC = () => {
   const fetchAppDownloads = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/apps/available');
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
+      const response = await fetch(`${apiBaseUrl}/apps/available`);
       const result = await response.json();
 
       if (result.success) {
@@ -200,7 +201,8 @@ const AppDownload: React.FC = () => {
   const handleDownload = (versionId: string, platform: string) => {
     console.log(`Downloading MockMate for ${platform}`);
     const link = document.createElement('a');
-    link.href = `/api/apps/download/${versionId}`;
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
+    link.href = `${apiBaseUrl}/apps/download/${versionId}`;
     link.download = `mockmate-${platform.toLowerCase()}.pkg`;
     document.body.appendChild(link);
     link.click();
