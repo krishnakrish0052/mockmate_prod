@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en" style="background-color: #0a0a0a;">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Failed - MockMate</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', 'JetBrains Mono', monospace; background-color: #0a0a0a; color: #ffffff; line-height: 1.6; }
+        .email-container { max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #0a0a0a, #1a1a1a); border: 1px solid #333333; border-radius: 8px; box-shadow: 0 0 20px rgba(255, 215, 0, 0.1); }
+        .cli-header { background: linear-gradient(90deg, #1a1a1a, #333333); border-bottom: 1px solid #ffbf00; border-radius: 8px 8px 0 0; padding: 20px; }
+        .terminal-title { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #ffd700; }
+        .cli-path { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #00ff00; opacity: 0.8; }
+        .email-content { padding: 30px 25px; }
+        .terminal-prompt { font-family: 'JetBrains Mono', monospace; color: #00ff00; font-weight: 700; margin-right: 8px; }
+        .terminal-prompt::before { content: '$ '; }
+        .cli-text { font-family: 'JetBrains Mono', monospace; color: #ffffff; line-height: 1.4; }
+        .cli-command { background: rgba(255, 215, 0, 0.1); border: 1px solid rgba(255, 215, 0, 0.3); border-radius: 4px; padding: 12px 15px; font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #ffd700; margin: 15px 0; }
+        .cli-command::before { content: '> '; color: #00ff00; font-weight: 700; }
+        .cli-button { display: inline-block; background: linear-gradient(135deg, #ffd700, #ffbf00); color: #0a0a0a; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-family: 'Inter', sans-serif; font-weight: 600; font-size: 14px; margin: 5px 10px 5px 0; box-shadow: 0 0 10px rgba(255, 215, 0, 0.3); }
+        .cli-error-box { background: rgba(255, 68, 68, 0.05); border-left: 4px solid #ff4444; padding: 15px 20px; margin: 20px 0; border-radius: 0 6px 6px 0; }
+        .cli-warning-box { background: rgba(255, 191, 0, 0.05); border-left: 4px solid #ffbf00; padding: 15px 20px; margin: 20px 0; border-radius: 0 6px 6px 0; }
+        .cli-info-box { background: rgba(0, 255, 255, 0.05); border-left: 4px solid #00ffff; padding: 15px 20px; margin: 20px 0; border-radius: 0 6px 6px 0; }
+        .cli-highlight { color: #ffd700; font-weight: 600; }
+        .ascii-money { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #ff4444; text-align: center; margin: 20px 0; white-space: pre-line; }
+        .cli-footer { background: #1a1a1a; border-top: 1px solid #333333; border-radius: 0 0 8px 8px; padding: 20px 25px; font-size: 12px; color: #666666; text-align: center; }
+        .cli-logo { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #ffd700; }
+        @media only screen and (max-width: 600px) { .email-container { margin: 10px; } .email-content { padding: 20px 15px; } }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="cli-header">
+            <div class="terminal-title">MockMate Terminal</div>
+            <div class="cli-path">~/mockmate/billing/payment-failed</div>
+        </div>
+        
+        <div class="email-content">
+            <div class="ascii-money">
+❌ PAYMENT FAILED ❌
+   Transaction rejected...
+            </div>
+            
+            <div class="cli-error-box">
+                <div class="cli-text">
+                    <span class="terminal-prompt"></span><strong style="color: #ff4444;">Payment Failed</strong>
+                </div>
+                <p style="margin-top: 10px;">We couldn't process your payment for <span class="cli-highlight">{{PLAN_NAME}}</span>. Please update your payment method and try again.</p>
+            </div>
+            
+            <div class="cli-command">billing --error --plan="{{PLAN_NAME}}" --reason="{{FAILURE_REASON}}"</div>
+            
+            <div class="cli-warning-box">
+                <div class="cli-text">
+                    <span class="terminal-prompt"></span><strong>Failure Details:</strong>
+                </div>
+                <ul style="margin-top: 10px; padding-left: 20px; font-size: 13px;">
+                    <li style="margin: 5px 0;">Reason: <span class="cli-highlight">{{FAILURE_REASON}}</span></li>
+                    <li style="margin: 5px 0;">Amount: <span class="cli-highlight">${{AMOUNT_FAILED}}</span></li>
+                    <li style="margin: 5px 0;">Attempt Date: <span class="cli-highlight">{{ATTEMPT_DATE}}</span></li>
+                    <li style="margin: 5px 0;">Next Retry: <span class="cli-highlight">{{NEXT_RETRY_DATE}}</span></li>
+                </ul>
+            </div>
+            
+            <div style="text-align: center; margin: 25px 0;">
+                <a href="{{UPDATE_PAYMENT_URL}}" class="cli-button">🔄 Update Payment Method</a>
+                <a href="{{RETRY_PAYMENT_URL}}" class="cli-button">🔁 Retry Payment</a>
+            </div>
+            
+            <div class="cli-info-box">
+                <div class="cli-text">
+                    <span class="terminal-prompt"></span><strong>Common Solutions:</strong>
+                </div>
+                <ul style="margin-top: 10px; padding-left: 20px; font-size: 13px;">
+                    <li style="margin: 5px 0;">Check if your card has sufficient funds</li>
+                    <li style="margin: 5px 0;">Verify your billing address is correct</li>
+                    <li style="margin: 5px 0;">Contact your bank about the transaction</li>
+                    <li style="margin: 5px 0;">Try a different payment method</li>
+                    <li style="margin: 5px 0;">Contact our support team for assistance</li>
+                </ul>
+            </div>
+            
+            <div class="cli-warning-box">
+                <div class="cli-text">
+                    <span class="terminal-prompt"></span><strong>Account Status:</strong>
+                </div>
+                <p style="margin-top: 10px;">
+                    Your subscription will remain active until <span class="cli-highlight">{{GRACE_PERIOD_END}}</span>. 
+                    Please update your payment method before then to avoid service interruption.
+                </p>
+            </div>
+            
+            <div class="cli-command">Need immediate help? Contact billing@mockmate.ai 📞</div>
+        </div>
+        
+        <div class="cli-footer">
+            <div class="cli-logo">MockMate</div>
+            <p>AI-Powered Interview Platform</p>
+            <p style="margin-top: 5px; font-size: 11px;">
+                Questions about billing? Email: <span style="color: #ffd700;">billing@mockmate.ai</span>
+            </p>
+        </div>
+    </div>
+</body>
+</html>
