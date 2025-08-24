@@ -9,25 +9,70 @@ const { Pool } = pkg;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load environment variables
-dotenv.config({ path: path.join(__dirname, '..', '.env') });
+// Load environment variables - try multiple locations
+const possibleEnvPaths = [
+    path.join(__dirname, '..', '.env'),
+    path.join(__dirname, '..', '.env.local'),
+    path.join(__dirname, '..', '..', '.env'),
+    '.env',
+    '../.env',
+    '../../.env'
+];
+
+let envLoaded = false;
+for (const envPath of possibleEnvPaths) {
+    try {
+        if (fs.existsSync(envPath)) {
+            console.log(`Loading environment from: ${envPath}`);
+            dotenv.config({ path: envPath });
+            envLoaded = true;
+            break;
+        }
+    } catch (error) {
+        // Continue to next path
+    }
+}
+
+if (!envLoaded) {
+    console.log('No .env file found, trying default dotenv config...');
+    dotenv.config();
+}
 
 async function applyMigration() {
+    // Try multiple environment variable naming conventions
+    const dbConfig = {
+        host: process.env.DATABASE_HOST || process.env.DB_HOST || process.env.PGHOST || 'localhost',
+        port: process.env.DATABASE_PORT || process.env.DB_PORT || process.env.PGPORT || '5432',
+        database: process.env.DATABASE_NAME || process.env.DB_NAME || process.env.PGDATABASE,
+        user: process.env.DATABASE_USER || process.env.DB_USER || process.env.PGUSER,
+        password: process.env.DATABASE_PASSWORD || process.env.DB_PASSWORD || process.env.PGPASSWORD
+    };
+    
     // Debug environment variables
     console.log('Database connection config:');
-    console.log('HOST:', process.env.DATABASE_HOST);
-    console.log('PORT:', process.env.DATABASE_PORT);
-    console.log('DATABASE:', process.env.DATABASE_NAME);
-    console.log('USER:', process.env.DATABASE_USER);
-    console.log('PASSWORD type:', typeof process.env.DATABASE_PASSWORD);
-    console.log('PASSWORD length:', process.env.DATABASE_PASSWORD ? process.env.DATABASE_PASSWORD.length : 'undefined');
+    console.log('HOST:', dbConfig.host);
+    console.log('PORT:', dbConfig.port);
+    console.log('DATABASE:', dbConfig.database);
+    console.log('USER:', dbConfig.user);
+    console.log('PASSWORD type:', typeof dbConfig.password);
+    console.log('PASSWORD length:', dbConfig.password ? dbConfig.password.length : 'undefined');
+    
+    // Check if we have all required config
+    if (!dbConfig.host || !dbConfig.database || !dbConfig.user || !dbConfig.password) {
+        console.error('Missing required database configuration!');
+        console.error('Available environment variables:');
+        console.error('DATABASE_*:', Object.keys(process.env).filter(k => k.startsWith('DATABASE_')));
+        console.error('DB_*:', Object.keys(process.env).filter(k => k.startsWith('DB_')));
+        console.error('PG*:', Object.keys(process.env).filter(k => k.startsWith('PG')));
+        process.exit(1);
+    }
     
     const pool = new Pool({
-        host: process.env.DATABASE_HOST,
-        port: parseInt(process.env.DATABASE_PORT) || 5432,
-        database: process.env.DATABASE_NAME,
-        user: process.env.DATABASE_USER,
-        password: String(process.env.DATABASE_PASSWORD || '').trim(),
+        host: dbConfig.host,
+        port: parseInt(dbConfig.port) || 5432,
+        database: dbConfig.database,
+        user: dbConfig.user,
+        password: String(dbConfig.password || '').trim(),
     });
 
     try {
