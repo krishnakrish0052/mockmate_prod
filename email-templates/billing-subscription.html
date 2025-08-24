@@ -4,6 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{BILLING_TYPE}} - MockMate</title>
+    <!-- 
+    ⚠️  DEPRECATED TEMPLATE ⚠️ 
+    This template handles multiple billing events in a single template, which creates poor UX.
+    
+    Please use the new event-specific templates instead:
+    - billing-payment-success.html (for successful payments)
+    - billing-payment-failed.html (for payment failures)  
+    - billing-subscription-expiring.html (for subscription renewals)
+    
+    See MIGRATION-GUIDE.md for full migration instructions.
+    -->
     <style>
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
