@@ -119,8 +119,8 @@ const AppManagement: React.FC = () => {
     if (!token) {
       throw new Error('No authentication token available');
     }
-    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-    const url = `${apiBaseUrl}${endpoint}`;
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+    const url = `${apiBaseUrl}/api${endpoint}`;
     const response = await fetch(url, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -194,8 +194,8 @@ const AppManagement: React.FC = () => {
         throw new Error('No authentication token available');
       }
       // Use fetch instead of XMLHttpRequest for better CORS handling
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
-      const uploadUrl = `${apiBaseUrl}/admin/apps/versions/upload`;
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+      const uploadUrl = `${apiBaseUrl}/api/admin/apps/versions/upload`;
       
       console.log('🚀 Starting upload to:', uploadUrl);
       console.log('📁 File size:', uploadForm.file?.size, 'bytes');

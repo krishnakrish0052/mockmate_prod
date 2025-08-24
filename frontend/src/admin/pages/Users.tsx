@@ -140,8 +140,7 @@ const Users: React.FC = () => {
         }
       }
 
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-      const response = await fetch(`${apiBaseUrl}/admin/users-enhanced?${params}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/admin/users-enhanced?${params}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('admin_token')}`,
           'Content-Type': 'application/json',
@@ -175,20 +174,20 @@ const Users: React.FC = () => {
       let method = 'PATCH';
       let body: any = {};
 
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
       switch (action) {
         case 'suspend':
-          endpoint = `${apiBaseUrl}/admin/users-enhanced/${userId}/suspend`;
+          endpoint = `${apiBaseUrl}/api/admin/users-enhanced/${userId}/suspend`;
           body = {
             reason: 'Suspended by admin',
             admin_notes: `User suspended on ${new Date().toISOString()}`,
           };
           break;
         case 'activate':
-          endpoint = `${apiBaseUrl}/admin/users-enhanced/${userId}/unsuspend`;
+          endpoint = `${apiBaseUrl}/api/admin/users-enhanced/${userId}/unsuspend`;
           break;
         case 'block':
-          endpoint = `${apiBaseUrl}/admin/users-enhanced/${userId}/suspend`;
+          endpoint = `${apiBaseUrl}/api/admin/users-enhanced/${userId}/suspend`;
           body = {
             reason: 'Blocked by admin',
             admin_notes: `User blocked on ${new Date().toISOString()}`,
@@ -225,8 +224,8 @@ const Users: React.FC = () => {
 
   const updateUserCredits = async (userId: string, credits: number) => {
     try {
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-      const response = await fetch(`${apiBaseUrl}/admin/users-enhanced/${userId}/credits/adjust`, {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+      const response = await fetch(`${apiBaseUrl}/api/admin/users-enhanced/${userId}/credits/adjust`, {
         method: 'PATCH',
         headers: {
           Authorization: `Bearer ${localStorage.getItem('admin_token')}`,
@@ -264,8 +263,8 @@ const Users: React.FC = () => {
     if (!editingUser) return;
 
     try {
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-      const response = await fetch(`${apiBaseUrl}/admin/users-enhanced/${editingUser.id}`, {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+      const response = await fetch(`${apiBaseUrl}/api/admin/users-enhanced/${editingUser.id}`, {
         method: 'PATCH',
         headers: {
           Authorization: `Bearer ${localStorage.getItem('admin_token')}`,
@@ -336,8 +335,8 @@ const Users: React.FC = () => {
     }
 
     try {
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-      const response = await fetch(`${apiBaseUrl}/admin/users-enhanced/${userId}`, {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+      const response = await fetch(`${apiBaseUrl}/api/admin/users-enhanced/${userId}`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${localStorage.getItem('admin_token')}`,

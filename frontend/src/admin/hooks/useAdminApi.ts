@@ -8,7 +8,7 @@ export const useAdminApi = () => {
 
   // Create an axios instance specifically for admin API calls
   const adminApi = axios.create({
-    baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api',
+    baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000',
   });
 
   // Configure request interceptor to add authentication

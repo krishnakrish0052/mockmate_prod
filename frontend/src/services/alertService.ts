@@ -1,7 +1,10 @@
 import { Alert } from '../components/alerts/AlertNotification';
 
 // API base URL - use environment variable or fallback to localhost
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+
+// Add the API prefix for all service requests
+const API_PREFIX = '/api';
 
 export interface CreateAlertRequest {
   title: string;
@@ -69,7 +72,7 @@ class AlertService {
   }
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const url = `${API_BASE}${endpoint}`;
+    const url = `${API_BASE}${API_PREFIX}${endpoint}`;
     const config: RequestInit = {
       headers: this.getAuthHeaders(),
       ...options,

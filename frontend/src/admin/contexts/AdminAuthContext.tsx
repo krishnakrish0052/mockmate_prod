@@ -84,7 +84,7 @@ function adminAuthReducer(state: AdminAuthState, action: AdminAuthAction): Admin
 
 // Create a separate axios instance for admin requests to avoid conflicts
 const adminAxios = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000',
 });
 
 // Configure admin axios instance with admin-specific interceptors
@@ -112,8 +112,8 @@ adminAxios.interceptors.response.use(
         const refreshToken = localStorage.getItem('admin_refresh_token');
         if (refreshToken) {
           // Use environment variable for refresh call to avoid hardcoded path
-          const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-          const refreshResponse = await axios.post(`${apiBaseUrl}/admin/refresh`, {
+          const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+          const refreshResponse = await axios.post(`${apiBaseUrl}/api/admin/refresh`, {
             refreshToken: refreshToken,
           });
 
