@@ -137,7 +137,8 @@ const HealthMonitoringPanel = ({ configurations, onConfigurationChange, showSnac
     setTestingConfigs(prev => new Set(prev.add(config.id)));
 
     try {
-      const response = await fetch(`/api/admin/payment-configs/${config.id}/test`, {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${apiBaseUrl}/admin/payment-configs/${config.id}/test`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${localStorage.getItem('adminToken')}`,
@@ -171,7 +172,8 @@ const HealthMonitoringPanel = ({ configurations, onConfigurationChange, showSnac
     setBulkTesting(true);
 
     try {
-      const response = await fetch('/api/admin/payment-configs/bulk-health-check', {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${apiBaseUrl}/admin/payment-configs/bulk-health-check`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${localStorage.getItem('adminToken')}`,
