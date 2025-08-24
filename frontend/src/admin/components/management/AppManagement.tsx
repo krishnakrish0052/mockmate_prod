@@ -140,7 +140,7 @@ const AppManagement: React.FC = () => {
 
   const fetchPlatforms = async () => {
     try {
-      const data = await apiCall('/api/admin/apps/platforms');
+      const data = await apiCall('/admin/apps/platforms');
       setPlatforms(data.data.platforms);
     } catch (err) {
       setError('Failed to load platforms: ' + (err as Error).message);
@@ -150,7 +150,7 @@ const AppManagement: React.FC = () => {
   const fetchVersions = async (page = 1, limit = 10) => {
     try {
       setLoading(true);
-      const data = await apiCall(`/api/admin/apps/versions?page=${page}&limit=${limit}`);
+      const data = await apiCall(`/admin/apps/versions?page=${page}&limit=${limit}`);
       setVersions(data.data.versions);
       setPagination(data.data.pagination);
     } catch (err) {
@@ -162,7 +162,7 @@ const AppManagement: React.FC = () => {
 
   const fetchStatistics = async () => {
     try {
-      const data = await apiCall('/api/admin/apps/statistics');
+      const data = await apiCall('/admin/apps/statistics');
       setStatistics(data.data);
     } catch (err) {
       console.error('Failed to load statistics:', err);
@@ -234,7 +234,7 @@ const AppManagement: React.FC = () => {
   const handleUpdateVersion = async (versionId: string, updates: any) => {
     try {
       setLoading(true);
-      await apiCall(`/api/admin/apps/versions/${versionId}`, {
+      await apiCall(`/admin/apps/versions/${versionId}`, {
         method: 'PUT',
         body: JSON.stringify(updates),
       });
@@ -259,7 +259,7 @@ const AppManagement: React.FC = () => {
 
     try {
       setLoading(true);
-      await apiCall(`/api/admin/apps/versions/${versionId}`, {
+      await apiCall(`/admin/apps/versions/${versionId}`, {
         method: 'DELETE',
       });
 
@@ -319,7 +319,7 @@ const AppManagement: React.FC = () => {
 
     try {
       setLoading(true);
-      await apiCall(`/api/admin/apps/platforms/${platformId}/toggle`, {
+      await apiCall(`/admin/apps/platforms/${platformId}/toggle`, {
         method: 'POST',
       });
 
