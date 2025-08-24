@@ -1091,42 +1091,105 @@ div.version-card.beta {
   font-weight: bold;
 }
 
-/* Progress Bar */
+/* Enhanced Progress Bar */
 .upload-progress {
   margin: 1rem 0;
   padding: 1rem;
   background: rgba(13, 13, 13, 0.9);
-  border-radius: 4px;
+  border-radius: 6px;
   border: 1px solid #333333;
   box-shadow:
-    0 0 20px rgba(0, 255, 0, 0.05),
+    0 0 20px rgba(0, 255, 0, 0.1),
     inset 0 1px 0 rgba(0, 255, 0, 0.1);
+  position: relative;
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.875rem;
+}
+
+.progress-label {
+  color: #00ff00;
+  font-weight: 600;
+  text-shadow: 0 0 5px rgba(0, 255, 0, 0.3);
+  opacity: 0.9;
+}
+
+.progress-percentage {
+  color: #ffd700;
+  font-weight: 700;
+  font-size: 1rem;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+  animation: pulse 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes pulse {
+  from { opacity: 0.8; }
+  to { opacity: 1; }
 }
 
 .progress-bar {
-  height: 8px;
-  background: rgba(51, 51, 51, 0.5);
-  border-radius: 4px;
+  height: 12px;
+  background: rgba(51, 51, 51, 0.8);
+  border-radius: 6px;
   overflow: hidden;
-  margin-bottom: 0.5rem;
-  border: 1px solid #333333;
+  margin-bottom: 0.75rem;
+  border: 1px solid #444444;
+  position: relative;
 }
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #00ff00, #00cc00);
-  transition: width 0.3s ease;
-  border-radius: 3px;
-  box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+  background: linear-gradient(90deg, #00ff00, #00cc00, #00ff00);
+  background-size: 200% 100%;
+  animation: 
+    shimmer 2s linear infinite,
+    glow 1.5s ease-in-out infinite alternate;
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 5px;
+  position: relative;
 }
 
-.progress-text {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #00ff00;
-  text-align: center;
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes glow {
+  from { box-shadow: 0 0 5px rgba(0, 255, 0, 0.3); }
+  to { box-shadow: 0 0 15px rgba(0, 255, 0, 0.6), 0 0 25px rgba(0, 255, 0, 0.3); }
+}
+
+.progress-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
   font-family: 'JetBrains Mono', monospace;
-  text-shadow: 0 0 5px rgba(0, 255, 0, 0.3);
+  font-size: 0.8rem;
+}
+
+.file-info {
+  color: #00ff00;
+  opacity: 0.9;
+  text-shadow: 0 0 3px rgba(0, 255, 0, 0.3);
+  font-weight: 500;
+}
+
+.upload-status {
+  color: #ffd700;
+  font-weight: 600;
+  text-shadow: 0 0 5px rgba(255, 215, 0, 0.3);
+  animation: fadeInOut 2s ease-in-out infinite;
+}
+
+@keyframes fadeInOut {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
 }
 
 /* Modal Actions */

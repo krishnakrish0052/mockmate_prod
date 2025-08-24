@@ -186,14 +186,16 @@ const AppManagement: React.FC = () => {
       }
     });
 
-    try {
+    return new Promise<void>((resolve, reject) => {
+      if (!token) {
+        reject(new Error('No authentication token available'));
+        return;
+      }
+
       setLoading(true);
       setUploadProgress(0);
+      setError('');
 
-      if (!token) {
-        throw new Error('No authentication token available');
-      }
-      // Use fetch instead of XMLHttpRequest for better CORS handling
       const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
       const uploadUrl = `${apiBaseUrl}/api/admin/apps/versions/upload`;
       
@@ -201,51 +203,73 @@ const AppManagement: React.FC = () => {
       console.log('📁 File size:', uploadForm.file?.size, 'bytes');
       console.log('📁 File name:', uploadForm.file?.name);
       
-      // Create AbortController for cancellable upload
-      const abortController = new AbortController();
+      const xhr = new XMLHttpRequest();
       
-      const response = await fetch(uploadUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          // Don't set Content-Type - let browser set it with boundary for FormData
-        },
-        body: formData,
-        signal: abortController.signal,
+      // Track upload progress
+      xhr.upload.addEventListener('progress', (event) => {
+        if (event.lengthComputable) {
+          const percentComplete = Math.round((event.loaded / event.total) * 100);
+          setUploadProgress(percentComplete);
+          console.log(`📊 Upload progress: ${percentComplete}%`);
+        }
       });
       
-      // Simulate progress since fetch doesn't support upload progress natively
-      const fileSize = uploadForm.file.size;
-      const progressInterval = setInterval(() => {
-        setUploadProgress(prev => {
-          if (prev >= 90) {
-            clearInterval(progressInterval);
-            return prev;
+      // Handle completion
+      xhr.addEventListener('load', () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const result = JSON.parse(xhr.responseText);
+            console.log('✅ Upload successful:', result);
+            
+            setUploadProgress(100);
+            setShowUploadModal(false);
+            resetUploadForm();
+            fetchVersions();
+            setLoading(false);
+            resolve();
+          } catch (parseError) {
+            console.error('❌ Failed to parse response:', parseError);
+            setError('Upload failed: Invalid server response');
+            setLoading(false);
+            reject(parseError);
           }
-          return prev + Math.random() * 10;
-        });
-      }, 200);
+        } else {
+          try {
+            const errorData = JSON.parse(xhr.responseText);
+            console.error('❌ Upload failed:', errorData);
+            setError(`Upload failed: ${errorData.message || xhr.statusText}`);
+          } catch {
+            console.error('❌ Upload failed:', xhr.statusText);
+            setError(`Upload failed: ${xhr.status} ${xhr.statusText}`);
+          }
+          setLoading(false);
+          reject(new Error(`Upload failed: ${xhr.status} ${xhr.statusText}`));
+        }
+      });
       
-      console.log('📡 Upload response status:', response.status);
-      console.log('📡 Upload response headers:', Object.fromEntries(response.headers.entries()));
+      // Handle errors
+      xhr.addEventListener('error', () => {
+        console.error('❌ Upload failed: Network error');
+        setError('Upload failed: Network error');
+        setLoading(false);
+        reject(new Error('Network error'));
+      });
       
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ Upload failed:', errorText);
-        throw new Error(`Upload failed: ${response.status} ${response.statusText}`);
-      }
+      // Handle abort
+      xhr.addEventListener('abort', () => {
+        console.log('⚠️ Upload aborted');
+        setError('Upload was cancelled');
+        setLoading(false);
+        reject(new Error('Upload cancelled'));
+      });
       
-      const result = await response.json();
-      console.log('✅ Upload successful:', result);
+      // Set up the request
+      xhr.open('POST', uploadUrl, true);
+      xhr.setRequestHeader('Authorization', `Bearer ${token}`);
       
-      setShowUploadModal(false);
-      resetUploadForm();
-      fetchVersions();
-      setUploadProgress(100);
-    } catch (err) {
-      setError('Upload failed: ' + (err as Error).message);
-      setLoading(false);
-    }
+      // Send the request
+      xhr.send(formData);
+    });
   };
 
   const handleUpdateVersion = async (versionId: string, updates: any) => {
@@ -716,12 +740,37 @@ const AppManagement: React.FC = () => {
                 </small>
               </div>
 
-              {uploadProgress > 0 && uploadProgress < 100 && (
+              {uploadProgress > 0 && (
                 <div className='upload-progress'>
-                  <div className='progress-bar'>
-                    <div className='progress-fill' style={{ width: `${uploadProgress}%` }}></div>
+                  <div className='progress-header'>
+                    <span className='progress-label'>Upload Progress</span>
+                    <span className='progress-percentage'>{Math.round(uploadProgress)}%</span>
                   </div>
-                  <span className='progress-text'>{uploadProgress}%</span>
+                  <div className='progress-bar'>
+                    <div 
+                      className='progress-fill' 
+                      style={{ width: `${uploadProgress}%` }}
+                    ></div>
+                  </div>
+                  <div className='progress-details'>
+                    {uploadForm.file && (
+                      <>
+                        <span className='file-info'>
+                          📁 {uploadForm.file.name} ({formatFileSize(uploadForm.file.size)})
+                        </span>
+                        {uploadProgress < 100 && (
+                          <span className='upload-status'>
+                            🔄 Uploading... {Math.round(uploadProgress)}% complete
+                          </span>
+                        )}
+                        {uploadProgress === 100 && (
+                          <span className='upload-status'>
+                            ✅ Upload complete! Processing...
+                          </span>
+                        )}
+                      </>
+                    )}
+                  </div>
                 </div>
               )}
 
