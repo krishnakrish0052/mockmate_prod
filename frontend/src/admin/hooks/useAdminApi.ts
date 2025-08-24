@@ -35,7 +35,7 @@ export const useAdminApi = () => {
         try {
           const refreshToken = localStorage.getItem('admin_refresh_token');
           if (refreshToken) {
-            const refreshResponse = await adminApi.post('/admin/refresh', {
+            const refreshResponse = await adminApi.post('/api/admin/refresh', {
               refreshToken: refreshToken,
             });
 
@@ -78,7 +78,7 @@ export const useAdminApi = () => {
 
       const response = await adminApi({
         method,
-        url: `/admin/${endpoint}`,
+        url: `/api/admin/${endpoint}`,
         data,
       });
 

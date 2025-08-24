@@ -14,8 +14,8 @@ export const loadIconConfig = async () => {
 
   try {
     // Use environment variable for API base URL, fallback to relative path for dev
-    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
-    const iconConfigUrl = `${apiBaseUrl}/config/icons`;
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+    const iconConfigUrl = `${apiBaseUrl}/api/config/icons`;
     
     console.log('Loading icon config from:', iconConfigUrl);
     
@@ -173,7 +173,8 @@ const updateManifestIcons = _config => {
     const manifestLink = document.querySelector('link[rel="manifest"]');
     if (manifestLink && window.location.hostname !== 'localhost') {
       // Only update for production, keep static for development
-      manifestLink.href = '/api/config/manifest';
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+      manifestLink.href = `${apiBaseUrl}/api/config/manifest`;
     }
   } catch (error) {
     console.error('Error updating manifest icons:', error);
