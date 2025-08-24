@@ -62,7 +62,7 @@ const CreditsPage: React.FC = () => {
         let publishableKey = null;
         try {
           console.log('🔄 Fetching Stripe config from backend...');
-          const configResponse = await axios.get('/config');
+          const configResponse = await axios.get('/api/config');
           publishableKey = configResponse.data?.data?.stripe_publishable_key;
           console.log('✅ Backend config loaded:', publishableKey ? 'Key found' : 'Key not found');
         } catch (error) {
@@ -122,7 +122,7 @@ const CreditsPage: React.FC = () => {
     const fetchPackages = async () => {
       try {
         setPackagesLoading(true);
-        const response = await axios.get('/payments/packages');
+        const response = await axios.get('/api/payments/packages');
 
         if (response.data.success) {
           // Transform backend data to frontend format
@@ -178,7 +178,7 @@ const CreditsPage: React.FC = () => {
       console.log('Creating payment intent for package:', packageId);
       
       // Create Stripe payment intent using the correct backend endpoint
-      const response = await axios.post('/payments/create-payment-intent', {
+      const response = await axios.post('/api/payments/create-payment-intent', {
         packageId,
         // Remove paymentMethodId as it's optional and might be causing issues
       });

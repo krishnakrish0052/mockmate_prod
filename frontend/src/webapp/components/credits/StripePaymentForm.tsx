@@ -73,7 +73,7 @@ const StripePaymentForm: React.FC<StripePaymentFormProps> = ({
         // Immediately process the payment on the backend to add credits
         try {
           console.log('🔄 Processing payment on backend...');
-          const processResult = await axios.post('/payments/process-payment-success', {
+          const processResult = await axios.post('/api/payments/process-payment-success', {
             paymentIntentId: confirmedPayment.id
           });
           
