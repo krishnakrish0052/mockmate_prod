@@ -28,6 +28,7 @@ import {
   ChartBarIcon,
 } from '@heroicons/react/24/outline';
 import { useAdminAuth } from '../contexts/AdminAuthContext';
+import { getApiUrl, API_ENDPOINTS, createAuthHeaders } from '../utils/apiConfig';
 
 interface ConfigItem {
   key: string;
@@ -91,12 +92,8 @@ const DynamicConfigurationManagement: React.FC = () => {
   const fetchConfigurations = async () => {
     setLoading(true);
     try {
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-      const response = await fetch(`${apiBaseUrl}/admin/dynamic-config?include_sensitive=true`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+      const response = await fetch(`${getApiUrl(API_ENDPOINTS.DYNAMIC_CONFIG)}?include_sensitive=true`, {
+        headers: createAuthHeaders(token),
       });
 
       if (response.ok) {
@@ -122,13 +119,9 @@ const DynamicConfigurationManagement: React.FC = () => {
 
   const saveConfiguration = async (key: string, value: any, reason?: string) => {
     try {
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-      const response = await fetch(`${apiBaseUrl}/admin/dynamic-config/${key}`, {
+      const response = await fetch(`${getApiUrl(API_ENDPOINTS.DYNAMIC_CONFIG)}/${key}`, {
         method: 'PUT',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+        headers: createAuthHeaders(token),
         body: JSON.stringify({ value, reason }),
       });
 
@@ -172,13 +165,9 @@ const DynamicConfigurationManagement: React.FC = () => {
     }));
 
     try {
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-      const response = await fetch(`${apiBaseUrl}/admin/dynamic-config/batch-update`, {
+      const response = await fetch(getApiUrl(API_ENDPOINTS.DYNAMIC_CONFIG_BATCH_UPDATE), {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+        headers: createAuthHeaders(token),
         body: JSON.stringify({
           configurations: updates,
           reason: 'Batch update from admin panel',
@@ -204,13 +193,9 @@ const DynamicConfigurationManagement: React.FC = () => {
 
   const reloadConfigurations = async () => {
     try {
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-      const response = await fetch(`${apiBaseUrl}/admin/dynamic-config/reload`, {
+      const response = await fetch(getApiUrl(API_ENDPOINTS.DYNAMIC_CONFIG_RELOAD), {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+        headers: createAuthHeaders(token),
       });
 
       if (response.ok) {
@@ -225,12 +210,8 @@ const DynamicConfigurationManagement: React.FC = () => {
 
   const exportConfigurations = async () => {
     try {
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-      const response = await fetch(`${apiBaseUrl}/admin/dynamic-config/export?include_sensitive=false`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+      const response = await fetch(`${getApiUrl(API_ENDPOINTS.DYNAMIC_CONFIG_EXPORT)}?include_sensitive=false`, {
+        headers: createAuthHeaders(token),
       });
 
       if (response.ok) {
