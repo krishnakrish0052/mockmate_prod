@@ -48,7 +48,7 @@ const CreateSession: React.FC = () => {
 
   const fetchResumes = async () => {
     try {
-      const response = await axios.get('/api/resumes');
+      const response = await axios.get('/resumes');
       setResumes(response.data.resumes || []);
     } catch (error) {
       console.error('Failed to fetch resumes:', error);
@@ -93,7 +93,7 @@ const CreateSession: React.FC = () => {
     setError('');
 
     try {
-      const response = await axios.post('/api/sessions/create', {
+      const response = await axios.post('/sessions/create', {
         ...formData,
         resumeId: formData.resumeId || undefined,
       });

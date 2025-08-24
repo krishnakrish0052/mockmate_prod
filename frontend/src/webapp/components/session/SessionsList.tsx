@@ -57,7 +57,7 @@ const SessionsList: React.FC = () => {
 
   const fetchSessions = async () => {
     try {
-      const response = await axios.get('/api/sessions');
+      const response = await axios.get('/sessions');
       setSessions(response.data.sessions || []);
     } catch (error) {
       console.error('Failed to fetch sessions:', error);
@@ -70,7 +70,7 @@ const SessionsList: React.FC = () => {
   const handleStartSession = async (sessionId: string) => {
     setActionLoading(`start-${sessionId}`);
     try {
-      await axios.post(`/api/sessions/${sessionId}/start`);
+      await axios.post(`/sessions/${sessionId}/start`);
       fetchSessions(); // Refresh the list
       // Redirect to session page
       window.location.href = `/session/${sessionId}`;
@@ -85,7 +85,7 @@ const SessionsList: React.FC = () => {
   const handleEndSession = async (sessionId: string) => {
     setActionLoading(`end-${sessionId}`);
     try {
-      await axios.put(`/api/sessions/${sessionId}`, { status: 'completed' });
+      await axios.put(`/sessions/${sessionId}`, { status: 'completed' });
       fetchSessions(); // Refresh the list
     } catch (error: any) {
       console.error('Failed to end session:', error);
@@ -98,7 +98,7 @@ const SessionsList: React.FC = () => {
   const handleDeleteSession = async (sessionId: string, force: boolean = false) => {
     setActionLoading(`delete-${sessionId}`);
     try {
-      await axios.delete(`/api/sessions/${sessionId}${force ? '?force=true' : ''}`);
+      await axios.delete(`/sessions/${sessionId}${force ? '?force=true' : ''}`);
       fetchSessions(); // Refresh the list
       setDeleteConfirmId(null);
     } catch (error: any) {
@@ -123,7 +123,7 @@ const SessionsList: React.FC = () => {
   const handleDownloadPDF = async (sessionId: string) => {
     setActionLoading(`download-${sessionId}`);
     try {
-      const response = await axios.get(`/api/sessions/${sessionId}/download-pdf`, {
+      const response = await axios.get(`/sessions/${sessionId}/download-pdf`, {
         responseType: 'blob',
       });
 
