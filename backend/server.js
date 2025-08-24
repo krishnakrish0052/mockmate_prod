@@ -93,15 +93,50 @@ let io;
 app.use(helmet());
 
 // CORS configuration
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'http://localhost:5173',
+  'https://mock-mate.com',
+  'https://www.mock-mate.com',
+  'https://api.mock-mate.com',
+  'https://backend.mock-mate.com'
+];
+
+// Add environment-specific origins
+if (process.env.CORS_ORIGINS) {
+  allowedOrigins.push(...process.env.CORS_ORIGINS.split(','));
+}
+if (process.env.CORS_ORIGIN) {
+  allowedOrigins.push(process.env.CORS_ORIGIN);
+}
+if (process.env.FRONTEND_URL) {
+  allowedOrigins.push(process.env.FRONTEND_URL);
+}
+
+// Remove duplicates
+const uniqueOrigins = [...new Set(allowedOrigins)];
+
+console.log('CORS allowed origins:', uniqueOrigins);
+
 app.use(
   cors({
-    origin: process.env.CORS_ORIGINS?.split(',') || [
-      'http://localhost:3000',
-      'http://localhost:3001',
-    ],
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      
+      if (uniqueOrigins.includes(origin)) {
+        return callback(null, true);
+      } else {
+        console.warn(`CORS blocked origin: ${origin}`);
+        return callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+    preflightContinue: false,
+    optionsSuccessStatus: 204
   })
 );
 
@@ -525,6 +560,16 @@ app.use(
     return adminRoutes(req, res, next);
   }
 );
+
+// CORS test endpoint
+app.get('/api/cors-test', (req, res) => {
+  res.json({
+    message: 'CORS is working correctly',
+    origin: req.headers.origin || 'No origin header',
+    timestamp: new Date().toISOString(),
+    corsAllowedOrigins: uniqueOrigins,
+  });
+});
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
