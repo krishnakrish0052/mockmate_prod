@@ -34,7 +34,7 @@ interface EmailCategory {
 
 const EmailTemplates: React.FC = () => {
   const { hasPermission } = useAdminAuth();
-  const { adminApiCall } = useAdminApi();
+  const { apiCall } = useAdminApi();
   
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [categories, setCategories] = useState<EmailCategory[]>([]);
@@ -59,7 +59,7 @@ const EmailTemplates: React.FC = () => {
   const loadTemplates = async () => {
     try {
       setLoading(true);
-      const response = await adminApiCall('/api/admin/email-templates', {
+      const response = await apiCall('email-templates', {
         method: 'GET',
       });
       
@@ -78,7 +78,7 @@ const EmailTemplates: React.FC = () => {
 
   const loadCategories = async () => {
     try {
-      const response = await adminApiCall('/api/admin/email-templates/categories', {
+      const response = await apiCall('email-templates/categories', {
         method: 'GET',
       });
       
