@@ -476,6 +476,32 @@ app.get(
 // Email template routes will be added dynamically during server initialization
 // For now, add a temporary route that will be replaced
 let emailTemplateRoutesPlaceholder;
+// Email template categories route
+app.get('/api/admin/email-templates/categories', adminAuth, async (req, res) => {
+  try {
+    // Simple fallback categories for now - can be enhanced later
+    const categories = [
+      { id: 1, name: 'Authentication', description: 'User authentication and account related emails', color: '#10b981', icon: 'shield' },
+      { id: 2, name: 'Notifications', description: 'System and user notifications', color: '#3b82f6', icon: 'bell' },
+      { id: 3, name: 'Billing', description: 'Payment and subscription related emails', color: '#f59e0b', icon: 'currency' },
+      { id: 4, name: 'Feedback', description: 'User feedback and survey emails', color: '#8b5cf6', icon: 'chat' },
+      { id: 5, name: 'General', description: 'General purpose email templates', color: '#6b7280', icon: 'document' },
+    ];
+
+    res.json({
+      success: true,
+      data: categories,
+    });
+  } catch (error) {
+    console.error('Failed to get email template categories:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve email template categories',
+      error: error.message,
+    });
+  }
+});
+
 // Direct email templates route (for GET requests)
 app.get('/api/admin/email-templates', adminAuth, async (req, res) => {
   try {
