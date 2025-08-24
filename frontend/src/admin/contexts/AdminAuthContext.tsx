@@ -188,7 +188,7 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       }
 
       // For real tokens, validate with server using the validate-token endpoint
-      const response = await adminAxios.get('/admin/validate-token');
+      const response = await adminAxios.get('/api/admin/validate-token');
       if (response.data.success && response.data.data.admin) {
         dispatch({
           type: 'LOGIN_SUCCESS',
@@ -243,7 +243,7 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         return;
       }
 
-      const response = await adminAxios.post('/admin/login', { username, password });
+      const response = await adminAxios.post('/api/admin/login', { username, password });
 
       if (response.data.success && response.data.data) {
         const { admin, tokens } = response.data.data;
@@ -263,7 +263,7 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const logout = async () => {
     try {
-      await adminAxios.post('/admin/logout');
+      await adminAxios.post('/api/admin/logout');
     } catch (error) {
       // Continue with logout even if server request fails
     }
@@ -280,7 +280,7 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         throw new Error('No refresh token available');
       }
 
-      const response = await adminAxios.post('/admin/refresh', {
+      const response = await adminAxios.post('/api/admin/refresh', {
         refreshToken: refreshTokenValue,
       });
       if (response.data.success && response.data.data) {
@@ -290,7 +290,7 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         localStorage.setItem('admin_token', accessToken);
 
         // Now get the updated user profile with the new token
-        const profileResponse = await adminAxios.get('/admin/validate-token');
+        const profileResponse = await adminAxios.get('/api/admin/validate-token');
         if (profileResponse.data.success && profileResponse.data.data.admin) {
           dispatch({
             type: 'LOGIN_SUCCESS',
@@ -316,7 +316,7 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     dispatch({ type: 'SET_LOADING', payload: true });
 
     try {
-      const response = await adminAxios.put('/admin/profile', data);
+      const response = await adminAxios.put('/api/admin/profile', data);
       if (response.data.success && response.data.data.profile) {
         dispatch({ type: 'UPDATE_USER', payload: response.data.data.profile });
       } else {
