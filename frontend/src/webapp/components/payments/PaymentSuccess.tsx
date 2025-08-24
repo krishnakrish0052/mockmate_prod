@@ -35,7 +35,7 @@ const PaymentSuccess: React.FC = () => {
 
       try {
         // Verify payment with backend
-        const response = await axios.post('/api/payments/verify-session', {
+        const response = await axios.post('/payments/verify-session', {
           sessionId
         });
 

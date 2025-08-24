@@ -121,7 +121,7 @@ export class AlertService {
   async getAlert(alertId) {
     try {
       const query = `
-        SELECT a.*, au.full_name as created_by_name
+        SELECT a.*, COALESCE(au.name, au.username) as created_by_name
         FROM alerts a
         LEFT JOIN admin_users au ON a.created_by = au.id
         WHERE a.id = $1
@@ -401,7 +401,7 @@ export class AlertService {
   async getAlertTemplates() {
     try {
       const query = `
-        SELECT at.*, au.full_name as created_by_name
+        SELECT at.*, COALESCE(au.name, au.username) as created_by_name
         FROM alert_templates at
         LEFT JOIN admin_users au ON at.created_by = au.id
         WHERE at.is_active = TRUE

@@ -100,7 +100,7 @@ const LandingPage: React.FC = () => {
       try {
         console.log('🔄 Fetching credit packages from API...');
         setPlansLoading(true);
-        const response = await axios.get('/api/payments/packages');
+        const response = await axios.get('/payments/packages');
         console.log('📡 API Response:', JSON.stringify(response.data, null, 2));
 
         if (response.data.success) {

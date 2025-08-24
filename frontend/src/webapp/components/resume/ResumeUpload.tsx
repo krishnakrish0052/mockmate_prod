@@ -91,7 +91,7 @@ const ResumeUpload: React.FC<ResumeUploadProps> = ({ onComplete, onCancel }) => 
     formData.append('resume', file);
 
     try {
-      const response = await axios.post('/api/resumes/upload', formData, {
+      const response = await axios.post('/resumes/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },

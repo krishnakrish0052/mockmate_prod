@@ -53,7 +53,7 @@ export const AlertForm: React.FC<AlertFormProps> = ({
     const loadTemplates = async () => {
       try {
         const response = await alertService.getAlertTemplates();
-        setTemplates(response.templates.filter(t => t.isActive));
+        setTemplates(response?.templates?.filter(t => t.isActive) || []);
       } catch (error) {
         console.error('Failed to load templates:', error);
       }
@@ -73,7 +73,7 @@ export const AlertForm: React.FC<AlertFormProps> = ({
       try {
         const response = await alertService.searchUsers(userSearch);
         setUserResults(
-          response.users.filter(user => !selectedUsers.some(selected => selected.id === user.id))
+          response?.users?.filter(user => !selectedUsers.some(selected => selected.id === user.id)) || []
         );
       } catch (error) {
         console.error('Failed to search users:', error);
@@ -174,19 +174,19 @@ export const AlertForm: React.FC<AlertFormProps> = ({
   const roles = ['admin', 'user', 'moderator', 'subscriber'];
 
   return (
-    <div className='mx-auto max-w-4xl rounded-lg bg-white p-6 shadow'>
+    <div className='mx-auto max-w-4xl rounded-lg bg-cli-darker border border-cli-gray p-6 shadow-cli-border'>
       <div className='mb-6'>
-        <h2 className='text-2xl font-bold text-gray-900'>
+        <h2 className='text-2xl font-bold text-cli-golden'>
           {alertId ? 'Edit Alert' : 'Create New Alert'}
         </h2>
-        <p className='mt-2 text-gray-600'>
+        <p className='mt-2 text-cli-light-gray'>
           Create alerts to notify users about important information or updates.
         </p>
       </div>
 
       {errors.general && (
-        <div className='mb-6 rounded-md border border-red-200 bg-red-50 p-4'>
-          <p className='text-sm text-red-600'>{errors.general}</p>
+        <div className='mb-6 rounded-md border border-red-600 bg-cli-dark p-4 shadow-glow-red'>
+          <p className='text-sm text-red-400 cli-glow'>{errors.general}</p>
         </div>
       )}
 
@@ -194,7 +194,7 @@ export const AlertForm: React.FC<AlertFormProps> = ({
         {/* Template Selection */}
         {templates.length > 0 && !alertId && (
           <div>
-            <label className='mb-2 block text-sm font-medium text-gray-700'>
+            <label className='mb-2 block text-sm font-medium text-cli-light-gray'>
               Use Template (Optional)
             </label>
             <select
@@ -202,7 +202,7 @@ export const AlertForm: React.FC<AlertFormProps> = ({
                 const template = templates.find(t => t.id === e.target.value);
                 if (template) handleTemplateSelect(template);
               }}
-              className='w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500'
+              className='w-full rounded-md border border-cli-gray bg-cli-dark text-cli-white px-3 py-2 focus:outline-none focus:border-cli-golden focus:ring-1 focus:ring-cli-golden transition-colors'
             >
               <option value=''>Select a template...</option>
               {templates.map(template => (
@@ -217,27 +217,27 @@ export const AlertForm: React.FC<AlertFormProps> = ({
         {/* Basic Information */}
         <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
           <div>
-            <label className='mb-2 block text-sm font-medium text-gray-700'>Title *</label>
+            <label className='mb-2 block text-sm font-medium text-cli-light-gray'>Title *</label>
             <input
               type='text'
               value={formData.title}
               onChange={e => setFormData(prev => ({ ...prev, title: e.target.value }))}
-              className={`w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-1 ${
+              className={`w-full rounded-md border bg-cli-dark text-cli-white px-3 py-2 focus:outline-none focus:ring-1 transition-colors ${
                 errors.title
-                  ? 'border-red-300 focus:ring-red-500'
-                  : 'border-gray-300 focus:ring-blue-500'
+                  ? 'border-red-500 focus:border-red-400 focus:ring-red-500'
+                  : 'border-cli-gray focus:border-cli-golden focus:ring-cli-golden'
               }`}
               placeholder='Alert title...'
             />
-            {errors.title && <p className='mt-1 text-sm text-red-600'>{errors.title}</p>}
+            {errors.title && <p className='mt-1 text-sm text-red-400'>{errors.title}</p>}
           </div>
 
           <div>
-            <label className='mb-2 block text-sm font-medium text-gray-700'>Alert Type</label>
+            <label className='mb-2 block text-sm font-medium text-cli-light-gray'>Alert Type</label>
             <select
               value={formData.alertType}
               onChange={e => setFormData(prev => ({ ...prev, alertType: e.target.value as any }))}
-              className='w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500'
+              className='w-full rounded-md border border-cli-gray bg-cli-dark text-cli-white px-3 py-2 focus:outline-none focus:border-cli-golden focus:ring-1 focus:ring-cli-golden transition-colors'
             >
               <option value='info'>Info</option>
               <option value='warning'>Warning</option>
@@ -249,28 +249,28 @@ export const AlertForm: React.FC<AlertFormProps> = ({
         </div>
 
         <div>
-          <label className='mb-2 block text-sm font-medium text-gray-700'>Message *</label>
+          <label className='mb-2 block text-sm font-medium text-cli-light-gray'>Message *</label>
           <textarea
             value={formData.message}
             onChange={e => setFormData(prev => ({ ...prev, message: e.target.value }))}
-            className={`w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-1 ${
+            className={`w-full rounded-md border bg-cli-dark text-cli-white px-3 py-2 focus:outline-none focus:ring-1 transition-colors ${
               errors.message
-                ? 'border-red-300 focus:ring-red-500'
-                : 'border-gray-300 focus:ring-blue-500'
+                ? 'border-red-500 focus:border-red-400 focus:ring-red-500'
+                : 'border-cli-gray focus:border-cli-golden focus:ring-cli-golden'
             }`}
             rows={4}
             placeholder='Alert message...'
           />
-          {errors.message && <p className='mt-1 text-sm text-red-600'>{errors.message}</p>}
+          {errors.message && <p className='mt-1 text-sm text-red-400'>{errors.message}</p>}
         </div>
 
         <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
           <div>
-            <label className='mb-2 block text-sm font-medium text-gray-700'>Priority</label>
+            <label className='mb-2 block text-sm font-medium text-cli-light-gray'>Priority</label>
             <select
               value={formData.priority}
               onChange={e => setFormData(prev => ({ ...prev, priority: e.target.value as any }))}
-              className='w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500'
+              className='w-full rounded-md border border-cli-gray bg-cli-dark text-cli-white px-3 py-2 focus:outline-none focus:border-cli-golden focus:ring-1 focus:ring-cli-golden transition-colors'
             >
               <option value='low'>Low</option>
               <option value='normal'>Normal</option>
@@ -280,12 +280,12 @@ export const AlertForm: React.FC<AlertFormProps> = ({
           </div>
 
           <div>
-            <label className='mb-2 block text-sm font-medium text-gray-700'>Icon (Optional)</label>
+            <label className='mb-2 block text-sm font-medium text-cli-light-gray'>Icon (Optional)</label>
             <input
               type='text'
               value={formData.icon}
               onChange={e => setFormData(prev => ({ ...prev, icon: e.target.value }))}
-              className='w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500'
+              className='w-full rounded-md border border-cli-gray bg-cli-dark text-cli-white px-3 py-2 focus:outline-none focus:border-cli-golden focus:ring-1 focus:ring-cli-golden transition-colors'
               placeholder='Icon name or emoji...'
             />
           </div>
@@ -293,13 +293,13 @@ export const AlertForm: React.FC<AlertFormProps> = ({
 
         {/* Targeting */}
         <div>
-          <label className='mb-2 block text-sm font-medium text-gray-700'>Target Audience *</label>
-          {errors.targeting && <p className='mb-2 text-sm text-red-600'>{errors.targeting}</p>}
+          <label className='mb-2 block text-sm font-medium text-cli-light-gray'>Target Audience *</label>
+          {errors.targeting && <p className='mb-2 text-sm text-red-400 cli-glow'>{errors.targeting}</p>}
 
           {/* Role Targeting */}
           <div className='mb-4'>
-            <label className='mb-2 block text-sm text-gray-600'>By Role:</label>
-            <div className='flex flex-wrap gap-2'>
+            <label className='mb-2 block text-sm text-cli-light-gray opacity-80'>By Role:</label>
+            <div className='flex flex-wrap gap-3'>
               {roles.map(role => (
                 <label key={role} className='flex items-center'>
                   <input
@@ -315,9 +315,9 @@ export const AlertForm: React.FC<AlertFormProps> = ({
                         }
                       });
                     }}
-                    className='mr-2'
+                    className='mr-2 rounded border-cli-gray bg-cli-dark text-cli-golden focus:ring-cli-golden'
                   />
-                  <span className='text-sm capitalize'>{role}</span>
+                  <span className='text-sm capitalize text-cli-white'>{role}</span>
                 </label>
               ))}
             </div>
@@ -325,27 +325,27 @@ export const AlertForm: React.FC<AlertFormProps> = ({
 
           {/* User Targeting */}
           <div>
-            <label className='mb-2 block text-sm text-gray-600'>Specific Users:</label>
+            <label className='mb-2 block text-sm text-cli-light-gray opacity-80'>Specific Users:</label>
             <input
               type='text'
               value={userSearch}
               onChange={e => setUserSearch(e.target.value)}
-              className='w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500'
+              className='w-full rounded-md border border-cli-gray bg-cli-dark text-cli-white px-3 py-2 focus:outline-none focus:border-cli-golden focus:ring-1 focus:ring-cli-golden transition-colors'
               placeholder='Search users by name or email...'
             />
 
             {/* User Search Results */}
             {userResults.length > 0 && (
-              <div className='mt-2 max-h-40 overflow-y-auto rounded-md border border-gray-200'>
+              <div className='mt-2 max-h-40 overflow-y-auto rounded-md border border-cli-gray bg-cli-dark'>
                 {userResults.map(user => (
                   <button
                     key={user.id}
                     type='button'
                     onClick={() => addUser(user)}
-                    className='w-full border-b border-gray-100 px-3 py-2 text-left last:border-b-0 hover:bg-gray-50'
+                    className='w-full border-b border-cli-gray px-3 py-2 text-left last:border-b-0 hover:bg-cli-gray transition-colors text-cli-white'
                   >
-                    <div className='font-medium'>{user.name}</div>
-                    <div className='text-sm text-gray-600'>{user.email}</div>
+                    <div className='font-medium text-cli-golden'>{user.name}</div>
+                    <div className='text-sm text-cli-light-gray'>{user.email}</div>
                   </button>
                 ))}
               </div>
@@ -354,18 +354,18 @@ export const AlertForm: React.FC<AlertFormProps> = ({
             {/* Selected Users */}
             {selectedUsers.length > 0 && (
               <div className='mt-3'>
-                <div className='mb-2 text-sm text-gray-600'>Selected Users:</div>
+                <div className='mb-2 text-sm text-cli-light-gray opacity-80'>Selected Users:</div>
                 <div className='flex flex-wrap gap-2'>
                   {selectedUsers.map(user => (
                     <span
                       key={user.id}
-                      className='inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800'
+                      className='inline-flex items-center rounded-full bg-cli-golden bg-opacity-20 border border-cli-golden px-2.5 py-0.5 text-xs font-medium text-cli-golden'
                     >
                       {user.name}
                       <button
                         type='button'
                         onClick={() => removeUser(user.id)}
-                        className='ml-1.5 text-blue-600 hover:text-blue-800'
+                        className='ml-1.5 text-cli-amber hover:text-cli-golden transition-colors'
                       >
                         ×
                       </button>
@@ -380,32 +380,32 @@ export const AlertForm: React.FC<AlertFormProps> = ({
         {/* Action URL */}
         <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
           <div>
-            <label className='mb-2 block text-sm font-medium text-gray-700'>
+            <label className='mb-2 block text-sm font-medium text-cli-light-gray'>
               Action URL (Optional)
             </label>
             <input
               type='url'
               value={formData.actionUrl}
               onChange={e => setFormData(prev => ({ ...prev, actionUrl: e.target.value }))}
-              className='w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500'
+              className='w-full rounded-md border border-cli-gray bg-cli-dark text-cli-white px-3 py-2 focus:outline-none focus:border-cli-golden focus:ring-1 focus:ring-cli-golden transition-colors'
               placeholder='https://example.com/action'
             />
           </div>
 
           <div>
-            <label className='mb-2 block text-sm font-medium text-gray-700'>Action Text</label>
+            <label className='mb-2 block text-sm font-medium text-cli-light-gray'>Action Text</label>
             <input
               type='text'
               value={formData.actionText}
               onChange={e => setFormData(prev => ({ ...prev, actionText: e.target.value }))}
-              className={`w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-1 ${
+              className={`w-full rounded-md border bg-cli-dark text-cli-white px-3 py-2 focus:outline-none focus:ring-1 transition-colors ${
                 errors.actionText
-                  ? 'border-red-300 focus:ring-red-500'
-                  : 'border-gray-300 focus:ring-blue-500'
+                  ? 'border-red-500 focus:border-red-400 focus:ring-red-500'
+                  : 'border-cli-gray focus:border-cli-golden focus:ring-cli-golden'
               }`}
               placeholder='View Details'
             />
-            {errors.actionText && <p className='mt-1 text-sm text-red-600'>{errors.actionText}</p>}
+            {errors.actionText && <p className='mt-1 text-sm text-red-400'>{errors.actionText}</p>}
           </div>
         </div>
 
@@ -414,29 +414,29 @@ export const AlertForm: React.FC<AlertFormProps> = ({
           <button
             type='button'
             onClick={() => setShowAdvanced(!showAdvanced)}
-            className='text-sm font-medium text-blue-600 hover:text-blue-800'
+            className='text-sm font-medium text-cli-cyan hover:text-cli-golden transition-colors'
           >
             {showAdvanced ? 'Hide' : 'Show'} Advanced Options
           </button>
         </div>
 
         {showAdvanced && (
-          <div className='grid grid-cols-1 gap-6 rounded-md bg-gray-50 p-4 md:grid-cols-2'>
+          <div className='grid grid-cols-1 gap-6 rounded-md bg-cli-dark border border-cli-gray p-4 md:grid-cols-2'>
             <div>
-              <label className='mb-2 block text-sm font-medium text-gray-700'>
+              <label className='mb-2 block text-sm font-medium text-cli-light-gray'>
                 Expires At (Optional)
               </label>
               <input
                 type='datetime-local'
                 value={expiresAt}
                 onChange={e => setExpiresAt(e.target.value)}
-                className={`w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-1 ${
+                className={`w-full rounded-md border bg-cli-darker text-cli-white px-3 py-2 focus:outline-none focus:ring-1 transition-colors ${
                   errors.expiresAt
-                    ? 'border-red-300 focus:ring-red-500'
-                    : 'border-gray-300 focus:ring-blue-500'
+                    ? 'border-red-500 focus:border-red-400 focus:ring-red-500'
+                    : 'border-cli-gray focus:border-cli-golden focus:ring-cli-golden'
                 }`}
               />
-              {errors.expiresAt && <p className='mt-1 text-sm text-red-600'>{errors.expiresAt}</p>}
+              {errors.expiresAt && <p className='mt-1 text-sm text-red-400'>{errors.expiresAt}</p>}
             </div>
 
             <div className='space-y-3'>
@@ -447,9 +447,9 @@ export const AlertForm: React.FC<AlertFormProps> = ({
                   onChange={e =>
                     setFormData(prev => ({ ...prev, isDismissible: e.target.checked }))
                   }
-                  className='mr-2'
+                  className='mr-2 rounded border-cli-gray bg-cli-dark text-cli-golden focus:ring-cli-golden'
                 />
-                <span className='text-sm'>Allow users to dismiss this alert</span>
+                <span className='text-sm text-cli-white'>Allow users to dismiss this alert</span>
               </label>
 
               <label className='flex items-center'>
@@ -457,21 +457,21 @@ export const AlertForm: React.FC<AlertFormProps> = ({
                   type='checkbox'
                   checked={formData.sendEmail}
                   onChange={e => setFormData(prev => ({ ...prev, sendEmail: e.target.checked }))}
-                  className='mr-2'
+                  className='mr-2 rounded border-cli-gray bg-cli-dark text-cli-golden focus:ring-cli-golden'
                 />
-                <span className='text-sm'>Send email notification</span>
+                <span className='text-sm text-cli-white'>Send email notification</span>
               </label>
             </div>
           </div>
         )}
 
         {/* Submit Buttons */}
-        <div className='flex justify-end space-x-3 border-t border-gray-200 pt-6'>
+        <div className='flex justify-end space-x-3 border-t border-cli-gray pt-6'>
           {onCancel && (
             <button
               type='button'
               onClick={onCancel}
-              className='rounded-md border border-gray-300 bg-white px-4 py-2 text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-blue-500'
+              className='rounded-md border border-cli-gray bg-cli-dark px-4 py-2 text-cli-light-gray hover:bg-cli-gray hover:text-cli-white focus:outline-none focus:ring-1 focus:ring-cli-golden transition-colors'
               disabled={loading}
             >
               Cancel
@@ -481,11 +481,11 @@ export const AlertForm: React.FC<AlertFormProps> = ({
           <button
             type='submit'
             disabled={loading}
-            className='flex items-center rounded-md bg-blue-600 px-6 py-2 text-white hover:bg-blue-700 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50'
+            className='flex items-center rounded-md bg-cli-golden px-6 py-2 text-cli-black font-medium hover:bg-cli-amber focus:outline-none focus:ring-1 focus:ring-cli-golden disabled:cursor-not-allowed disabled:opacity-50 transition-colors'
           >
             {loading && (
               <svg
-                className='-ml-1 mr-3 h-5 w-5 animate-spin text-white'
+                className='-ml-1 mr-3 h-5 w-5 animate-spin text-cli-black'
                 fill='none'
                 viewBox='0 0 24 24'
               >
