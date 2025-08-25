@@ -5,22 +5,22 @@ import {
   CliCard,
   CliBadge,
   CliButton,
-  CliInput,
   CliSelect,
 } from '../components/ui/CliComponents';
 import {
   DocumentTextIcon,
-  CalendarIcon,
-  DownloadIcon,
-  ChartBarIcon,
-  UsersIcon,
-  CurrencyDollarIcon,
-  ClockIcon,
-  DocumentIcon,
+  DocumentChartBarIcon,
   ArrowDownTrayIcon,
-  EyeIcon,
+  CalendarDaysIcon,
+  ChartBarIcon,
+  ClockIcon,
   ExclamationTriangleIcon,
+  CheckCircleIcon,
+  XMarkIcon,
+  EyeIcon,
+  TrashIcon,
 } from '@heroicons/react/24/outline';
+import { getApiUrl, API_ENDPOINTS, createAuthHeaders } from '../utils/apiConfig';
 
 interface ReportTemplate {
   id: string;
@@ -249,12 +249,9 @@ const Reports: React.FC = () => {
 
   const fetchReportTemplates = async () => {
     try {
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-      const response = await fetch(`${apiBaseUrl}/admin/reports/templates`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('admin_token')}`,
-          'Content-Type': 'application/json',
-        },
+      const token = localStorage.getItem('admin_token');
+      const response = await fetch(`${getApiUrl(API_ENDPOINTS.REPORTS)}/templates`, {
+        headers: createAuthHeaders(token || ''),
       });
 
       if (response.ok) {
@@ -281,12 +278,9 @@ const Reports: React.FC = () => {
         limit: pagination.limit.toString(),
       });
 
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-      const response = await fetch(`${apiBaseUrl}/admin/reports/history?${params}`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('admin_token')}`,
-          'Content-Type': 'application/json',
-        },
+      const token = localStorage.getItem('admin_token');
+      const response = await fetch(`${getApiUrl(API_ENDPOINTS.REPORTS)}/history?${params}`, {
+        headers: createAuthHeaders(token || ''),
       });
 
       if (response.ok) {
