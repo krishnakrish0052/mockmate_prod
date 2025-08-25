@@ -18,6 +18,7 @@ import {
   EyeSlashIcon,
   CheckCircleIcon,
 } from '@heroicons/react/24/outline';
+import { getApiUrl, API_ENDPOINTS, createAuthHeaders } from '../utils/apiConfig';
 
 interface AdminProfile {
   id: string;
@@ -70,12 +71,9 @@ const AdminProfile: React.FC = () => {
   const fetchProfile = async () => {
     setLoading(true);
     try {
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-      const response = await fetch(`${apiBaseUrl}/admin-profile/me`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('admin_token')}`,
-          'Content-Type': 'application/json',
-        },
+      const token = localStorage.getItem('admin_token');
+      const response = await fetch(`${getApiUrl(API_ENDPOINTS.PROFILE)}/me`, {
+        headers: createAuthHeaders(token || ''),
       });
 
       if (response.ok) {
@@ -117,13 +115,10 @@ const AdminProfile: React.FC = () => {
         notificationPreferences: profileForm.notificationSettings,
       };
 
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-      const response = await fetch(`${apiBaseUrl}/admin-profile/me`, {
+      const token = localStorage.getItem('admin_token');
+      const response = await fetch(`${getApiUrl(API_ENDPOINTS.PROFILE)}/me`, {
         method: 'PUT',
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('admin_token')}`,
-          'Content-Type': 'application/json',
-        },
+        headers: createAuthHeaders(token || ''),
         body: JSON.stringify(updateData),
       });
 
@@ -162,13 +157,10 @@ const AdminProfile: React.FC = () => {
 
     setSaving(true);
     try {
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-      const response = await fetch(`${apiBaseUrl}/admin-profile/me/change-password`, {
+      const token = localStorage.getItem('admin_token');
+      const response = await fetch(`${getApiUrl(API_ENDPOINTS.PROFILE)}/me/change-password`, {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('admin_token')}`,
-          'Content-Type': 'application/json',
-        },
+        headers: createAuthHeaders(token || ''),
         body: JSON.stringify({
           currentPassword: passwordForm.currentPassword,
           newPassword: passwordForm.newPassword,
@@ -205,13 +197,10 @@ const AdminProfile: React.FC = () => {
   const toggle2FA = async () => {
     setSaving(true);
     try {
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-      const response = await fetch(`${apiBaseUrl}/admin-profile/2fa`, {
+      const token = localStorage.getItem('admin_token');
+      const response = await fetch(`${getApiUrl(API_ENDPOINTS.PROFILE)}/2fa`, {
         method: 'PATCH',
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('admin_token')}`,
-          'Content-Type': 'application/json',
-        },
+        headers: createAuthHeaders(token || ''),
         body: JSON.stringify({
           enabled: !profile?.twoFactorEnabled,
         }),
