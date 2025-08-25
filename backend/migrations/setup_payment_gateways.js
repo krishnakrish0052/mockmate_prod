@@ -1,4 +1,4 @@
-import { getDatabase } from '../config/database.js';
+import { getDatabase, initializeDatabase } from '../config/database.js';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../config/logger.js';
 
@@ -8,6 +8,8 @@ import { logger } from '../config/logger.js';
  */
 
 async function setupPaymentGateways() {
+  // Initialize database connection first
+  await initializeDatabase();
   const db = getDatabase();
   
   try {
