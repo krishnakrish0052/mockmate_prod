@@ -288,6 +288,7 @@ class PaymentConfiguration {
       razorpay: ['key_id', 'key_secret'],
       square: ['access_token', 'application_id'],
       braintree: ['merchant_id', 'public_key', 'private_key'],
+      cashfree: ['app_id', 'secret_key'],
     };
 
     return providerRequirements[this.provider_name.toLowerCase()] || [];

@@ -3,6 +3,7 @@ import axios from 'axios';
 import { PaymentConfiguration } from '../models/PaymentConfiguration.js';
 import { getDatabase } from '../config/database.js';
 import { logger } from '../config/logger.js';
+import { CashfreeService } from './CashfreeService.js';
 
 class PaymentService {
   constructor() {
@@ -71,6 +72,9 @@ class PaymentService {
         break;
       case 'square':
         await this.initializeSquare(config, providerConfig);
+        break;
+      case 'cashfree':
+        await this.initializeCashfree(config, providerConfig);
         break;
       default:
         logger.warn(`Unknown payment provider: ${config.provider_name}`);
@@ -169,6 +173,27 @@ class PaymentService {
     });
   }
 
+  // Initialize Cashfree provider
+  async initializeCashfree(config, providerConfig) {
+    const { app_id, secret_key, is_test_mode = true } = providerConfig;
+
+    if (!app_id || !secret_key) {
+      throw new Error('Cashfree configuration missing required credentials');
+    }
+
+    // Create a new Cashfree service instance for this config
+    const cashfreeService = new CashfreeService();
+    cashfreeService.initialize(providerConfig);
+
+    this.providers.set(config.id, {
+      type: 'cashfree',
+      client: cashfreeService,
+      config: config,
+      appId: app_id,
+      isTestMode: is_test_mode,
+    });
+  }
+
   // Get optimal payment provider for a transaction
   async getOptimalProvider(amount, currency = 'USD', country = 'US', userId = null) {
     await this.initializeProviders();
@@ -220,6 +245,9 @@ class PaymentService {
           break;
         case 'square':
           paymentIntent = await this.createSquarePayment(provider, amount, currency, metadata);
+          break;
+        case 'cashfree':
+          paymentIntent = await this.createCashfreeOrder(provider, amount, currency, metadata);
           break;
         default:
           throw new Error(`Payment intent creation not implemented for ${provider.type}`);
@@ -342,6 +370,33 @@ class PaymentService {
     return response.data;
   }
 
+  // Create Cashfree order
+  async createCashfreeOrder(provider, amount, currency = 'INR', metadata) {
+    const orderId = `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    const orderData = {
+      orderId,
+      orderAmount: parseFloat(amount),
+      orderCurrency: currency,
+      customerDetails: {
+        customerId: metadata.userId || 'guest_customer',
+        customerName: metadata.customerName || 'Customer',
+        customerEmail: metadata.customerEmail || 'customer@example.com',
+        customerPhone: metadata.customerPhone || '',
+      },
+      orderNote: metadata.description || 'Credit package purchase',
+      returnUrl: metadata.returnUrl || `${process.env.FRONTEND_URL}/payment/success`,
+      notifyUrl: metadata.notifyUrl || `${process.env.BACKEND_URL}/api/payments/cashfree/webhook`,
+      orderMeta: {
+        credits: metadata.credits,
+        packageId: metadata.packageId,
+        userId: metadata.userId,
+      },
+    };
+
+    return await provider.client.createOrder(orderData);
+  }
+
   // Confirm payment
   async confirmPayment(paymentId, paymentMethodId = null, configId = null) {
     await this.initializeProviders();
@@ -375,6 +430,9 @@ class PaymentService {
         case 'razorpay':
           // Razorpay payments are captured automatically after successful payment
           result = await this.getRazorpayPayment(provider, paymentId);
+          break;
+        case 'cashfree':
+          result = await this.getCashfreeOrderStatus(provider, paymentId);
           break;
         default:
           throw new Error(`Payment confirmation not implemented for ${provider.type}`);
@@ -419,6 +477,11 @@ class PaymentService {
     return response.data;
   }
 
+  // Get Cashfree order status
+  async getCashfreeOrderStatus(provider, orderId) {
+    return await provider.client.getOrderStatus(orderId);
+  }
+
   // Refund payment
   async refundPayment(paymentId, amount = null, configId = null) {
     await this.initializeProviders();
@@ -440,6 +503,15 @@ class PaymentService {
       case 'paypal':
         // PayPal refund implementation
         throw new Error('PayPal refunds not implemented yet');
+      case 'cashfree':
+        const refundData = {
+          cfPaymentId: paymentId,
+          refundAmount: amount,
+          refundId: `refund_${Date.now()}`,
+          refundNote: 'Admin initiated refund',
+        };
+        const refundResult = await provider.client.processRefund(refundData);
+        return refundResult.data;
       default:
         throw new Error(`Refund not implemented for ${provider.type}`);
     }
@@ -452,6 +524,7 @@ class PaymentService {
       paypal: ['client_id', 'client_secret'],
       razorpay: ['key_id', 'key_secret'],
       square: ['access_token', 'application_id'],
+      cashfree: ['app_id', 'secret_key'],
     };
 
     const required = requiredFields[providerName.toLowerCase()] || [];
@@ -470,6 +543,13 @@ class PaymentService {
       }
       if (configuration.publishable_key && !configuration.publishable_key.startsWith('pk_')) {
         errors.push('Invalid Stripe publishable key format');
+      }
+    }
+
+    if (providerName.toLowerCase() === 'cashfree') {
+      const cashfreeValidation = CashfreeService.validateConfiguration(configuration);
+      if (!cashfreeValidation.valid) {
+        errors.push(...cashfreeValidation.errors);
       }
     }
 
@@ -554,6 +634,12 @@ class PaymentService {
             },
             params: { count: 1 },
           });
+          break;
+        case 'cashfree':
+          const testResult = await provider.client.testConnection();
+          if (!testResult.success) {
+            throw new Error(testResult.error);
+          }
           break;
         default:
           throw new Error(`Connectivity test not implemented for ${provider.type}`);

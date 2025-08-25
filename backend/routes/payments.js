@@ -6,6 +6,8 @@ import { getDatabase } from '../config/database.js';
 import { cache } from '../config/redis.js';
 import { authenticateToken, userRateLimit } from '../middleware/auth.js';
 import { logError, logPaymentEvent } from '../config/logger.js';
+import { paymentService } from '../services/PaymentService.js';
+import { cashfreeService } from '../services/CashfreeService.js';
 
 // Stripe will be initialized lazily after we resolve credentials from dynamic config or env
 let stripe = null;
@@ -100,6 +102,7 @@ async function getActiveSubscriptionPlans() {
 const createPaymentIntentValidation = [
   body('packageId').notEmpty().withMessage('Package ID is required'),
   body('paymentMethodId').optional().isString().withMessage('Payment method ID must be a string'),
+  body('gateway').optional().isIn(['stripe', 'cashfree']).withMessage('Invalid payment gateway'),
 ];
 
 const confirmPaymentValidation = [
@@ -172,6 +175,37 @@ router.get('/plans', async (req, res) => {
   }
 });
 
+// Get available payment gateways
+router.get('/gateways', async (req, res) => {
+  try {
+    // Initialize payment service to get active providers
+    await paymentService.initializeProviders();
+    const activeProviders = paymentService.getActiveProviders();
+    
+    const gateways = activeProviders.map(provider => ({
+      id: provider.type,
+      name: provider.displayName || provider.providerName,
+      active: true, // Only active providers are returned
+      priority: provider.priority,
+      supportedCurrencies: ['USD', 'INR'], // Will be properly configured per provider
+      supportedCountries: ['US', 'IN'],
+      type: provider.type,
+      configId: provider.configId,
+    }));
+
+    res.json({
+      success: true,
+      gateways,
+    });
+  } catch (error) {
+    logError(error, { endpoint: 'payments/gateways' });
+    res.status(500).json({
+      error: 'Failed to get payment gateways',
+      code: 'GATEWAYS_ERROR',
+    });
+  }
+});
+
 // Create payment intent
 router.post(
   '/create-payment-intent',
@@ -189,7 +223,7 @@ router.post(
         });
       }
 
-      const { packageId, paymentMethodId } = req.body;
+      const { packageId, paymentMethodId, gateway = 'stripe' } = req.body;
       const CREDIT_PACKAGES = await getActiveCreditPackages();
       const creditPackage = CREDIT_PACKAGES[packageId];
 
@@ -200,68 +234,132 @@ router.post(
         });
       }
 
-      // Initialize Stripe with dynamic credentials
-      const stripeClient = await getStripeClient(req);
-
-      // Create payment intent with Stripe
-      const paymentIntentData = {
-        amount: creditPackage.price,
-        currency: 'usd',
-        metadata: {
-          userId: req.user.id.toString(),
-          packageId,
-          credits: creditPackage.credits.toString(),
-        },
-        description: `${creditPackage.name} - ${creditPackage.credits} credits`,
-        receipt_email: req.user.email,
-      };
-
-      // Add payment method if provided
-      if (paymentMethodId) {
-        paymentIntentData.payment_method = paymentMethodId;
-        paymentIntentData.confirmation_method = 'manual';
-        paymentIntentData.confirm = true;
-        paymentIntentData.return_url = `${process.env.FRONTEND_URL}/payment/success`;
-      }
-
-      const paymentIntent = await stripeClient.paymentIntents.create(paymentIntentData);
-
-      // Store payment record in database
+      let paymentIntent;
+      let paymentProvider = 'stripe'; // Default to Stripe for backward compatibility
       const pool = getPool();
       const paymentId = uuidv4();
-      await pool.query(
-        `
-        INSERT INTO payments (
-          id, user_id, stripe_payment_intent_id, package_id, 
-          credits, amount, status, created_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, 'pending', CURRENT_TIMESTAMP)
-      `,
-        [
-          paymentId,
-          req.user.id,
-          paymentIntent.id,
-          packageId,
-          creditPackage.credits,
-          creditPackage.price,
-        ]
-      );
+
+      if (gateway === 'cashfree') {
+        // Create Cashfree order
+        try {
+          await paymentService.initializeProviders();
+          const activeProviders = paymentService.getActiveProviders();
+          const cashfreeProvider = activeProviders.find(p => p.type === 'cashfree');
+          
+          if (!cashfreeProvider) {
+            throw new Error('Cashfree gateway not available or not configured');
+          }
+
+          const metadata = {
+            userId: req.user.id.toString(),
+            packageId,
+            credits: creditPackage.credits.toString(),
+            customerName: req.user.name || 'Customer',
+            customerEmail: req.user.email,
+            customerPhone: req.user.phone || '',
+            description: `${creditPackage.name} - ${creditPackage.credits} credits`,
+            returnUrl: `${process.env.FRONTEND_URL}/payment/success`,
+            notifyUrl: `${process.env.BACKEND_URL || 'http://localhost:5000'}/api/payments/cashfree/webhook`,
+          };
+
+          // Convert price from USD cents to INR (approximate conversion)
+          const amountInINR = Math.round((creditPackage.price / 100) * 83); // 1 USD ≈ 83 INR
+
+          const cashfreeOrder = await paymentService.createPaymentIntent(
+            amountInINR,
+            'INR',
+            metadata,
+            req.user.id
+          );
+
+          paymentIntent = cashfreeOrder.data;
+          paymentProvider = 'cashfree';
+
+          // Store payment record for Cashfree
+          await pool.query(
+            `
+            INSERT INTO payments (
+              id, user_id, cashfree_order_id, package_id, 
+              credits, amount, status, payment_provider, created_at
+            ) VALUES ($1, $2, $3, $4, $5, $6, 'pending', 'cashfree', CURRENT_TIMESTAMP)
+          `,
+            [
+              paymentId,
+              req.user.id,
+              paymentIntent.orderId,
+              packageId,
+              creditPackage.credits,
+              creditPackage.price, // Store original USD price
+            ]
+          );
+
+        } catch (error) {
+          throw new Error(`Cashfree payment creation failed: ${error.message}`);
+        }
+      } else {
+        // Use Stripe (existing implementation)
+        const stripeClient = await getStripeClient(req);
+
+        const paymentIntentData = {
+          amount: creditPackage.price,
+          currency: 'usd',
+          metadata: {
+            userId: req.user.id.toString(),
+            packageId,
+            credits: creditPackage.credits.toString(),
+          },
+          description: `${creditPackage.name} - ${creditPackage.credits} credits`,
+          receipt_email: req.user.email,
+        };
+
+        if (paymentMethodId) {
+          paymentIntentData.payment_method = paymentMethodId;
+          paymentIntentData.confirmation_method = 'manual';
+          paymentIntentData.confirm = true;
+          paymentIntentData.return_url = `${process.env.FRONTEND_URL}/payment/success`;
+        }
+
+        paymentIntent = await stripeClient.paymentIntents.create(paymentIntentData);
+
+        // Store payment record for Stripe
+        await pool.query(
+          `
+          INSERT INTO payments (
+            id, user_id, stripe_payment_intent_id, package_id, 
+            credits, amount, status, payment_provider, created_at
+          ) VALUES ($1, $2, $3, $4, $5, $6, 'pending', 'stripe', CURRENT_TIMESTAMP)
+        `,
+          [
+            paymentId,
+            req.user.id,
+            paymentIntent.id,
+            packageId,
+            creditPackage.credits,
+            creditPackage.price,
+          ]
+        );
+      }
 
       logPaymentEvent('PAYMENT_INTENT_CREATED', req.user.id, creditPackage.price, {
-        paymentIntentId: paymentIntent.id,
+        paymentIntentId: paymentIntent.id || paymentIntent.cfOrderId,
         packageId,
         credits: creditPackage.credits,
+        gateway: paymentProvider,
       });
 
       res.json({
         paymentIntent: {
-          id: paymentIntent.id,
+          id: paymentIntent.id || paymentIntent.cfOrderId,
           clientSecret: paymentIntent.client_secret,
-          status: paymentIntent.status,
+          status: paymentIntent.status || paymentIntent.orderStatus,
+          paymentLink: paymentIntent.paymentLink, // For Cashfree
+          orderToken: paymentIntent.orderToken, // For Cashfree
         },
         package: {
           id: packageId,
           ...creditPackage,
         },
+        gateway: paymentProvider,
       });
     } catch (error) {
       logError(error, { endpoint: 'payments/create-payment-intent', userId: req.user?.id });
@@ -275,6 +373,7 @@ router.post(
         res.status(500).json({
           error: 'Failed to create payment intent',
           code: 'PAYMENT_INTENT_ERROR',
+          message: error.message,
         });
       }
     }
@@ -776,6 +875,227 @@ async function handlePaymentCanceled(paymentIntent) {
     });
   } catch (error) {
     logError(error, { context: 'handlePaymentCanceled', paymentIntentId: paymentIntent.id });
+  }
+}
+
+// Get Cashfree order status
+router.get('/cashfree/status/:orderId', authenticateToken, async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    
+    // Verify the order belongs to the user
+    const pool = getPool();
+    const paymentQuery = `
+      SELECT * FROM payments 
+      WHERE cashfree_order_id = $1 AND user_id = $2
+    `;
+    const paymentResult = await pool.query(paymentQuery, [orderId, req.user.id]);
+    
+    if (paymentResult.rows.length === 0) {
+      return res.status(404).json({
+        error: 'Order not found',
+        code: 'ORDER_NOT_FOUND',
+      });
+    }
+    
+    // Get order status from Cashfree
+    await paymentService.initializeProviders();
+    const activeProviders = paymentService.getActiveProviders();
+    const cashfreeProvider = activeProviders.find(p => p.type === 'cashfree');
+    
+    if (!cashfreeProvider) {
+      return res.status(500).json({
+        error: 'Cashfree service not available',
+        code: 'SERVICE_UNAVAILABLE',
+      });
+    }
+    
+    const orderStatus = await paymentService.confirmPayment(orderId, null, cashfreeProvider.configId);
+    
+    res.json({
+      success: true,
+      data: orderStatus.data,
+    });
+  } catch (error) {
+    logError(error, { endpoint: 'payments/cashfree/status', orderId: req.params.orderId });
+    res.status(500).json({
+      error: 'Failed to get order status',
+      code: 'ORDER_STATUS_ERROR',
+      message: error.message,
+    });
+  }
+});
+
+// Cashfree webhook handler
+router.post('/cashfree/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  try {
+    const signature = req.headers['x-webhook-signature'];
+    const timestamp = req.headers['x-webhook-timestamp'];
+    
+    if (!signature || !timestamp) {
+      return res.status(400).send('Missing webhook signature or timestamp');
+    }
+
+    // Verify webhook signature
+    const isValid = cashfreeService.verifyWebhookSignature(req.body, signature, timestamp);
+    if (!isValid) {
+      return res.status(400).send('Invalid webhook signature');
+    }
+
+    const webhookData = JSON.parse(req.body.toString());
+    const { type, data } = webhookData;
+
+    console.log('Cashfree webhook received:', { type, orderId: data?.order?.order_id });
+
+    switch (type) {
+      case 'PAYMENT_SUCCESS_WEBHOOK':
+        await handleCashfreePaymentSuccess(data);
+        break;
+      case 'PAYMENT_FAILED_WEBHOOK':
+        await handleCashfreePaymentFailed(data);
+        break;
+      case 'PAYMENT_USER_DROPPED_WEBHOOK':
+        await handleCashfreePaymentCanceled(data);
+        break;
+      default:
+        console.log(`Unhandled Cashfree webhook type: ${type}`);
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    logError(error, { endpoint: 'payments/cashfree/webhook' });
+    res.status(500).json({ error: 'Webhook handler failed' });
+  }
+});
+
+// Helper function to handle successful Cashfree payments
+async function handleCashfreePaymentSuccess(data) {
+  const { order, payment } = data;
+  const pool = getPool();
+
+  try {
+    // Get payment record from database
+    const paymentQuery = `
+      SELECT * FROM payments 
+      WHERE cashfree_order_id = $1
+    `;
+    const paymentResult = await pool.query(paymentQuery, [order.order_id]);
+    
+    if (paymentResult.rows.length === 0) {
+      throw new Error(`Payment record not found for Cashfree order: ${order.order_id}`);
+    }
+
+    const paymentRecord = paymentResult.rows[0];
+    
+    if (paymentRecord.status === 'completed') {
+      console.log(`Cashfree payment ${order.order_id} already processed`);
+      return;
+    }
+
+    await pool.query('BEGIN');
+
+    // Update payment status
+    await pool.query(
+      `
+      UPDATE payments 
+      SET status = 'completed', 
+          cashfree_payment_id = $2,
+          updated_at = CURRENT_TIMESTAMP
+      WHERE cashfree_order_id = $1
+    `,
+      [order.order_id, payment.cf_payment_id]
+    );
+
+    // Add credits to user account
+    await pool.query(
+      `
+      UPDATE users 
+      SET credits = credits + $1, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $2
+    `,
+      [parseInt(paymentRecord.credits), paymentRecord.user_id]
+    );
+
+    // Record credit transaction
+    await pool.query(
+      `
+      INSERT INTO credit_transactions (
+        user_id, credits_amount, transaction_type, description, created_at
+      ) VALUES ($1, $2, 'purchase', $3, CURRENT_TIMESTAMP)
+    `,
+      [
+        paymentRecord.user_id,
+        parseInt(paymentRecord.credits),
+        `Credit purchase via Cashfree - Order ${order.order_id}`,
+      ]
+    );
+
+    await pool.query('COMMIT');
+
+    // Clear user cache
+    await cache.del(`user:${paymentRecord.user_id}`);
+
+    logPaymentEvent('CASHFREE_PAYMENT_COMPLETED', paymentRecord.user_id, paymentRecord.amount, {
+      orderId: order.order_id,
+      paymentId: payment.cf_payment_id,
+      credits: paymentRecord.credits,
+    });
+
+    console.log(`Cashfree payment processed successfully: ${order.order_id}`);
+  } catch (error) {
+    await pool.query('ROLLBACK');
+    logError(error, { 
+      context: 'handleCashfreePaymentSuccess', 
+      orderId: order?.order_id 
+    });
+    throw error;
+  }
+}
+
+// Helper function to handle failed Cashfree payments
+async function handleCashfreePaymentFailed(data) {
+  const { order } = data;
+  const pool = getPool();
+  
+  try {
+    await pool.query(
+      `
+      UPDATE payments 
+      SET status = 'failed', updated_at = CURRENT_TIMESTAMP
+      WHERE cashfree_order_id = $1
+    `,
+      [order.order_id]
+    );
+
+    logPaymentEvent('CASHFREE_PAYMENT_FAILED', null, null, {
+      orderId: order.order_id,
+      reason: 'Payment failed',
+    });
+  } catch (error) {
+    logError(error, { context: 'handleCashfreePaymentFailed', orderId: order?.order_id });
+  }
+}
+
+// Helper function to handle canceled Cashfree payments
+async function handleCashfreePaymentCanceled(data) {
+  const { order } = data;
+  const pool = getPool();
+  
+  try {
+    await pool.query(
+      `
+      UPDATE payments 
+      SET status = 'canceled', updated_at = CURRENT_TIMESTAMP
+      WHERE cashfree_order_id = $1
+    `,
+      [order.order_id]
+    );
+
+    logPaymentEvent('CASHFREE_PAYMENT_CANCELED', null, null, {
+      orderId: order.order_id,
+    });
+  } catch (error) {
+    logError(error, { context: 'handleCashfreePaymentCanceled', orderId: order?.order_id });
   }
 }
 

@@ -101,6 +101,9 @@ class PaymentHealthCheckService {
         case 'square':
           await this.testSquareConnectivity(providerConfig);
           break;
+        case 'cashfree':
+          await this.testCashfreeConnectivity(providerConfig);
+          break;
         default:
           throw new Error(`Connectivity test not implemented for ${config.provider_name}`);
       }
@@ -140,6 +143,9 @@ class PaymentHealthCheckService {
           break;
         case 'square':
           await this.testSquareAuthentication(providerConfig);
+          break;
+        case 'cashfree':
+          await this.testCashfreeAuthentication(providerConfig);
           break;
         default:
           throw new Error(`Authentication test not implemented for ${config.provider_name}`);
@@ -417,6 +423,59 @@ class PaymentHealthCheckService {
 
     if (!response.data.locations) {
       throw new Error('Failed to authenticate with Square');
+    }
+  }
+
+  async testCashfreeConnectivity(providerConfig) {
+    const { CashfreeService } = await import('./CashfreeService.js');
+    const cashfreeService = new CashfreeService();
+    
+    try {
+      cashfreeService.initialize(providerConfig);
+      const testResult = await cashfreeService.testConnection();
+      
+      if (!testResult.success) {
+        throw new Error(testResult.error || 'Cashfree connectivity test failed');
+      }
+      
+      return testResult;
+    } catch (error) {
+      throw new Error(`Cashfree connectivity test failed: ${error.message}`);
+    }
+  }
+
+  async testCashfreeAuthentication(providerConfig) {
+    const { CashfreeService } = await import('./CashfreeService.js');
+    const cashfreeService = new CashfreeService();
+    
+    try {
+      cashfreeService.initialize(providerConfig);
+      
+      // Test authentication by creating a test order
+      const testOrderId = `health_check_${Date.now()}`;
+      const testOrder = {
+        orderId: testOrderId,
+        orderAmount: 1,
+        orderCurrency: 'INR',
+        customerDetails: {
+          customerId: 'health_check_customer',
+          customerName: 'Health Check',
+          customerEmail: 'healthcheck@example.com',
+        },
+        returnUrl: 'https://example.com/return',
+        notifyUrl: 'https://example.com/notify',
+        orderNote: 'Health check test order',
+      };
+      
+      const result = await cashfreeService.createOrder(testOrder);
+      
+      if (!result.success) {
+        throw new Error('Failed to create test order with Cashfree');
+      }
+      
+      return result;
+    } catch (error) {
+      throw new Error(`Cashfree authentication test failed: ${error.message}`);
     }
   }
 

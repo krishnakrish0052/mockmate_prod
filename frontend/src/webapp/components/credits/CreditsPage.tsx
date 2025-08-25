@@ -24,6 +24,7 @@ import {
   CliBadge,
 } from '../ui/CliComponents';
 import StripePaymentForm from './StripePaymentForm';
+import CashfreePaymentForm from './CashfreePaymentForm';
 
 interface CreditPackage {
   id: string;
@@ -37,17 +38,28 @@ interface CreditPackage {
   description: string;
 }
 
+interface PaymentGateway {
+  id: string;
+  name: string;
+  active: boolean;
+  priority: number;
+  supportedCurrencies: string[];
+  supportedCountries: string[];
+}
+
 const CreditsPage: React.FC = () => {
   const { user, refreshUser } = useAuth();
   const [loading, setLoading] = useState(false);
   const [packagesLoading, setPackagesLoading] = useState(true);
   const [selectedPackage, setSelectedPackage] = useState<string | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState('card');
+  const [selectedGateway, setSelectedGateway] = useState<string>('stripe');
+  const [availableGateways, setAvailableGateways] = useState<PaymentGateway[]>([]);
   const [creditPackages, setCreditPackages] = useState<CreditPackage[]>([]);
   const [stripeInstance, setStripeInstance] = useState<any>(null);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [currentPaymentIntent, setCurrentPaymentIntent] = useState<any>(null);
   const [currentPackage, setCurrentPackage] = useState<CreditPackage | null>(null);
+  const [currentGateway, setCurrentGateway] = useState<string>('stripe');
 
   // Initialize Stripe immediately so buttons are safe to click
   useEffect(() => {
@@ -117,6 +129,30 @@ const CreditsPage: React.FC = () => {
     };
   }, []);
   
+  // Fetch available payment gateways
+  useEffect(() => {
+    const fetchGateways = async () => {
+      try {
+        const response = await axios.get('/api/payments/gateways');
+        if (response.data.success) {
+          const gateways = response.data.gateways.filter((g: PaymentGateway) => g.active);
+          setAvailableGateways(gateways);
+          
+          // Set default gateway to the first available one
+          if (gateways.length > 0) {
+            setSelectedGateway(gateways[0].id);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch payment gateways:', error);
+        // Default to Stripe if gateway fetch fails
+        setAvailableGateways([{ id: 'stripe', name: 'Stripe', active: true, priority: 100, supportedCurrencies: ['USD'], supportedCountries: ['US'] }]);
+      }
+    };
+
+    fetchGateways();
+  }, []);
+
   // Fetch credit packages from database
   useEffect(() => {
     const fetchPackages = async () => {
@@ -177,73 +213,106 @@ const CreditsPage: React.FC = () => {
     try {
       console.log('Creating payment intent for package:', packageId);
       
-      // Create Stripe payment intent using the correct backend endpoint
+      // Create payment intent using the selected gateway
       const response = await axios.post('/api/payments/create-payment-intent', {
         packageId,
-        // Remove paymentMethodId as it's optional and might be causing issues
+        gateway: selectedGateway,
       });
 
       console.log('Payment intent response:', response.data);
 
       if (response.data.paymentIntent) {
-        const { paymentIntent, package: packageData } = response.data;
+        const { paymentIntent, package: packageData, gateway } = response.data;
+        setCurrentGateway(gateway);
         
-        // Debug the payment intent structure
-        console.log('🔍 Payment Intent Details:', {
-          id: paymentIntent.id,
-          clientSecret: paymentIntent.client_secret || paymentIntent.clientSecret,
-          status: paymentIntent.status,
-          hasClientSecret: !!(paymentIntent.client_secret || paymentIntent.clientSecret)
-        });
-        
-        // Validate that we have a client secret
-        const clientSecret = paymentIntent.client_secret || paymentIntent.clientSecret;
-        if (!clientSecret) {
-          console.error('❌ Missing client_secret in payment intent:', paymentIntent);
-          alert(
-            '❌ Payment Setup Error\n\n' +
-            'The payment intent was created but is missing required data.\n' +
-            'This is likely a backend configuration issue.\n\n' +
-            'Please contact support or try again later.'
-          );
-          return;
+        if (gateway === 'stripe') {
+          // Debug the payment intent structure
+          console.log('🔍 Stripe Payment Intent Details:', {
+            id: paymentIntent.id,
+            clientSecret: paymentIntent.client_secret || paymentIntent.clientSecret,
+            status: paymentIntent.status,
+            hasClientSecret: !!(paymentIntent.client_secret || paymentIntent.clientSecret)
+          });
+          
+          // Validate that we have a client secret for Stripe
+          const clientSecret = paymentIntent.client_secret || paymentIntent.clientSecret;
+          if (!clientSecret) {
+            console.error('❌ Missing client_secret in Stripe payment intent:', paymentIntent);
+            alert(
+              '❌ Payment Setup Error\n\n' +
+              'The payment intent was created but is missing required data.\n' +
+              'This is likely a backend configuration issue.\n\n' +
+              'Please contact support or try again later.'
+            );
+            return;
+          }
+          
+          // Check if Stripe is initialized
+          if (!stripeInstance) {
+            console.error('Stripe.js not initialized');
+            alert(
+              '⚠️ Payment System Not Available\n\n' +
+              'Stripe.js failed to load. This could be due to:\n' +
+              '• Network connectivity issues\n' +
+              '• Firewall or ad blocker restrictions\n' +
+              '• Browser security settings\n\n' +
+              'Please try:\n' +
+              '1. Refreshing the page\n' +
+              '2. Disabling ad blockers temporarily\n' +
+              '3. Checking your internet connection\n\n' +
+              'The backend payment system is working, but we cannot load the payment form.'
+            );
+            return;
+          }
+          
+          if (stripeInstance === 'error') {
+            console.error('Stripe.js in error state');
+            alert(
+              '❌ Payment System Error\n\n' +
+              'The payment system is temporarily unavailable.\n\n' +
+              'This is likely due to network restrictions blocking access to Stripe.\n' +
+              'Please contact support or try again later.'
+            );
+            return;
+          }
+          
+          // Show the Stripe payment form
+          console.log('✅ Stripe payment intent created, showing payment form');
+          setCurrentPaymentIntent({
+            id: paymentIntent.id,
+            clientSecret: clientSecret,
+          });
+        } else if (gateway === 'cashfree') {
+          // Handle Cashfree order data
+          console.log('🔍 Cashfree Order Details:', {
+            orderId: paymentIntent.id,
+            paymentLink: paymentIntent.paymentLink,
+            orderToken: paymentIntent.orderToken,
+            status: paymentIntent.status
+          });
+          
+          if (!paymentIntent.paymentLink) {
+            console.error('❌ Missing paymentLink in Cashfree order:', paymentIntent);
+            alert(
+              '❌ Payment Setup Error\n\n' +
+              'The Cashfree order was created but is missing the payment link.\n' +
+              'This is likely a backend configuration issue.\n\n' +
+              'Please contact support or try again later.'
+            );
+            return;
+          }
+          
+          // Show the Cashfree payment form
+          console.log('✅ Cashfree order created, showing payment form');
+          setCurrentPaymentIntent({
+            orderId: paymentIntent.id,
+            cfOrderId: paymentIntent.id,
+            paymentSessionId: paymentIntent.paymentSessionId || '',
+            orderToken: paymentIntent.orderToken || '',
+            paymentLink: paymentIntent.paymentLink,
+          });
         }
         
-        // Check if Stripe is initialized
-        if (!stripeInstance) {
-          console.error('Stripe.js not initialized');
-          alert(
-            '⚠️ Payment System Not Available\n\n' +
-            'Stripe.js failed to load. This could be due to:\n' +
-            '• Network connectivity issues\n' +
-            '• Firewall or ad blocker restrictions\n' +
-            '• Browser security settings\n\n' +
-            'Please try:\n' +
-            '1. Refreshing the page\n' +
-            '2. Disabling ad blockers temporarily\n' +
-            '3. Checking your internet connection\n\n' +
-            'The backend payment system is working, but we cannot load the payment form.'
-          );
-          return;
-        }
-        
-        if (stripeInstance === 'error') {
-          console.error('Stripe.js in error state');
-          alert(
-            '❌ Payment System Error\n\n' +
-            'The payment system is temporarily unavailable.\n\n' +
-            'This is likely due to network restrictions blocking access to Stripe.\n' +
-            'Please contact support or try again later.'
-          );
-          return;
-        }
-        
-        // Show the payment form with Stripe Elements
-        console.log('✅ Payment intent created, showing payment form');
-        setCurrentPaymentIntent({
-          id: paymentIntent.id,
-          clientSecret: clientSecret,
-        });
         setCurrentPackage({
           ...selectedPkg,
           name: packageData.name,
@@ -326,7 +395,7 @@ const CreditsPage: React.FC = () => {
       <MatrixRain />
 
       {/* Payment Form Modal */}
-      {showPaymentForm && currentPaymentIntent && currentPackage && stripeInstance && (
+      {showPaymentForm && currentPaymentIntent && currentPackage && (
         <div className='fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75'>
           <div className='relative mx-4 w-full max-w-md'>
             <button
@@ -335,19 +404,36 @@ const CreditsPage: React.FC = () => {
             >
               <XMarkIcon className='h-6 w-6' />
             </button>
-            <Elements stripe={stripeInstance}>
-              <StripePaymentForm
-                paymentIntent={currentPaymentIntent}
+            
+            {currentGateway === 'stripe' && stripeInstance && (
+              <Elements stripe={stripeInstance}>
+                <StripePaymentForm
+                  paymentIntent={currentPaymentIntent}
+                  packageInfo={{
+                    name: currentPackage.name,
+                    credits: currentPackage.credits,
+                    price: currentPackage.price,
+                  }}
+                  onSuccess={handlePaymentSuccess}
+                  onError={handlePaymentError}
+                  onCancel={handlePaymentCancel}
+                />
+              </Elements>
+            )}
+            
+            {currentGateway === 'cashfree' && (
+              <CashfreePaymentForm
+                orderData={currentPaymentIntent}
                 packageInfo={{
                   name: currentPackage.name,
                   credits: currentPackage.credits,
-                  price: currentPackage.price, // Backend already returns price in cents
+                  price: currentPackage.price,
                 }}
                 onSuccess={handlePaymentSuccess}
                 onError={handlePaymentError}
                 onCancel={handlePaymentCancel}
               />
-            </Elements>
+            )}
           </div>
         </div>
       )}
@@ -528,58 +614,52 @@ const CreditsPage: React.FC = () => {
           )}
         </div>
 
-        {/* Payment Methods */}
-        <TerminalWindow title='mockmate@store:~$ ./payment-methods.sh --available' className='mb-8'>
+        {/* Payment Gateways Selection */}
+        <TerminalWindow title='mockmate@store:~$ ./payment-gateways --select' className='mb-8'>
           <div className='p-8'>
             <div className='mb-6 text-center'>
               <TypingText
-                text='Select Payment Method'
+                text='Select Payment Gateway'
                 className='mb-4 font-mono text-xl font-bold text-primary-500'
                 speed={50}
               />
-              <div className='font-mono text-sm text-cli-gray'>$ ls /payment/methods/ --secure</div>
+              <div className='font-mono text-sm text-cli-gray'>$ ls /payment/gateways/ --active</div>
             </div>
-            <div className='grid grid-cols-1 gap-4 md:grid-cols-3'>
-              <CliButton
-                onClick={() => setPaymentMethod('card')}
-                variant={paymentMethod === 'card' ? 'primary' : 'secondary'}
-                className='flex h-auto items-center justify-start space-x-3 p-4 text-left'
-              >
-                <CreditCardIcon className='h-6 w-6' />
-                <div>
-                  <div className='font-mono font-medium'>./credit-card</div>
-                  <div className='font-mono text-xs text-cli-gray'>Visa, Mastercard, Amex</div>
+            
+            {availableGateways.length === 0 ? (
+              <div className='text-center py-8'>
+                <div className='font-mono text-lg text-cli-light-gray mb-2'>
+                  No active payment gateways available
                 </div>
-              </CliButton>
-
-              <CliButton
-                onClick={() => setPaymentMethod('paypal')}
-                variant={paymentMethod === 'paypal' ? 'primary' : 'secondary'}
-                className='flex h-auto items-center justify-start space-x-3 p-4 text-left'
-              >
-                <div className='flex h-6 w-6 items-center justify-center rounded bg-blue-600'>
-                  <span className='text-xs font-bold text-white'>PP</span>
+                <div className='font-mono text-sm text-cli-gray'>
+                  $ echo "Please contact administrator to enable payment gateways"
                 </div>
-                <div>
-                  <div className='font-mono font-medium'>./paypal</div>
-                  <div className='font-mono text-xs text-cli-gray'>Secure PayPal gateway</div>
-                </div>
-              </CliButton>
-
-              <CliButton
-                onClick={() => setPaymentMethod('apple')}
-                variant={paymentMethod === 'apple' ? 'primary' : 'secondary'}
-                className='flex h-auto items-center justify-start space-x-3 p-4 text-left'
-              >
-                <div className='flex h-6 w-6 items-center justify-center rounded bg-black'>
-                  <span className='text-xs font-bold text-white'>🍎</span>
-                </div>
-                <div>
-                  <div className='font-mono font-medium'>./apple-pay</div>
-                  <div className='font-mono text-xs text-cli-gray'>Quick & secure</div>
-                </div>
-              </CliButton>
-            </div>
+              </div>
+            ) : (
+              <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3'>
+                {availableGateways.map((gateway) => (
+                  <CliButton
+                    key={gateway.id}
+                    onClick={() => setSelectedGateway(gateway.id)}
+                    variant={selectedGateway === gateway.id ? 'primary' : 'secondary'}
+                    className='flex h-auto items-center justify-start space-x-3 p-4 text-left'
+                  >
+                    <div className='text-2xl'>
+                      {gateway.id === 'stripe' ? '💳' : gateway.id === 'cashfree' ? '🇮🇳' : '💰'}
+                    </div>
+                    <div>
+                      <div className='font-mono font-medium'>./{gateway.id}</div>
+                      <div className='font-mono text-xs text-cli-gray'>
+                        {gateway.name} - Priority: {gateway.priority}
+                      </div>
+                      <div className='font-mono text-xs text-cli-gray'>
+                        {gateway.supportedCurrencies.join(', ')}
+                      </div>
+                    </div>
+                  </CliButton>
+                ))}
+              </div>
+            )}
           </div>
         </TerminalWindow>
 
