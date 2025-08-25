@@ -43,20 +43,25 @@ export const API_ENDPOINTS = {
   REPORTS: '/admin/reports',
   PROFILE: '/admin/profile',
   PRICING: '/admin/pricing',
+  ADMIN: {
+    PRICING_PACKAGES: '/admin/pricing-management/packages',
+    PRICING_PLANS: '/admin/pricing-management/plans',
+  },
 } as const;
 
 /**
  * Create fetch headers with authentication
- * @param token - Admin authentication token
+ * @param token - Admin authentication token (optional - will get from localStorage if not provided)
  * @param additionalHeaders - Any additional headers to include
  * @returns Headers object for fetch requests
  */
 export const createAuthHeaders = (
-  token: string,
+  token?: string,
   additionalHeaders: Record<string, string> = {}
 ): HeadersInit => {
+  const authToken = token || localStorage.getItem('admin_token') || '';
   return {
-    'Authorization': `Bearer ${token}`,
+    'Authorization': `Bearer ${authToken}`,
     'Content-Type': 'application/json',
     ...additionalHeaders,
   };

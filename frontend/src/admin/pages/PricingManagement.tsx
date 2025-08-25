@@ -7,12 +7,11 @@ import {
   CliButton,
   CliInput,
   CliSelect,
+  CliTextarea,
 } from '../components/ui/CliComponents';
 import {
-  CreditCardIcon,
-  TagIcon,
   CurrencyDollarIcon,
-  StarIcon,
+  CreditCardIcon,
   PlusIcon,
   PencilIcon,
   TrashIcon,
@@ -22,6 +21,8 @@ import {
   CheckCircleIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
+import { getApiUrl, API_ENDPOINTS, createAuthHeaders } from '../utils/apiConfig';
+import { StarIcon } from '@heroicons/react/24/solid';
 
 interface CreditPackage {
   id: string;
@@ -109,12 +110,8 @@ const PricingManagement: React.FC = () => {
 
   const fetchCreditPackages = async () => {
     try {
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-      const response = await fetch(`${apiBaseUrl}/admin/pricing-management/packages`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('admin_token')}`,
-          'Content-Type': 'application/json',
-        },
+      const response = await fetch(getApiUrl(API_ENDPOINTS.ADMIN.PRICING_PACKAGES), {
+        headers: createAuthHeaders(),
       });
 
       if (response.ok) {
@@ -144,12 +141,8 @@ const PricingManagement: React.FC = () => {
 
   const fetchSubscriptionPlans = async () => {
     try {
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-      const response = await fetch(`${apiBaseUrl}/admin/pricing-management/plans`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('admin_token')}`,
-          'Content-Type': 'application/json',
-        },
+      const response = await fetch(getApiUrl(API_ENDPOINTS.ADMIN.PRICING_PLANS), {
+        headers: createAuthHeaders(),
       });
 
       if (response.ok) {
@@ -192,10 +185,9 @@ const PricingManagement: React.FC = () => {
   const savePackage = async () => {
     setSaving(true);
     try {
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
       const url = editingPackage
-        ? `${apiBaseUrl}/admin/pricing-management/packages/${editingPackage.id}`
-        : `${apiBaseUrl}/admin/pricing-management/packages`;
+        ? getApiUrl(`${API_ENDPOINTS.ADMIN.PRICING_PACKAGES}/${editingPackage.id}`)
+        : getApiUrl(API_ENDPOINTS.ADMIN.PRICING_PACKAGES);
 
       const method = editingPackage ? 'PUT' : 'POST';
 
@@ -220,10 +212,7 @@ const PricingManagement: React.FC = () => {
 
       const response = await fetch(url, {
         method,
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('admin_token')}`,
-          'Content-Type': 'application/json',
-        },
+        headers: createAuthHeaders(),
         body: JSON.stringify(requestBody),
       });
 
@@ -252,13 +241,9 @@ const PricingManagement: React.FC = () => {
 
   const togglePackageStatus = async (id: string, isActive: boolean) => {
     try {
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-      const response = await fetch(`${apiBaseUrl}/admin/pricing-management/packages/${id}`, {
+      const response = await fetch(getApiUrl(`${API_ENDPOINTS.ADMIN.PRICING_PACKAGES}/${id}`), {
         method: 'PUT',
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('admin_token')}`,
-          'Content-Type': 'application/json',
-        },
+        headers: createAuthHeaders(),
         body: JSON.stringify({ isActive: !isActive }),
       });
 
@@ -274,12 +259,9 @@ const PricingManagement: React.FC = () => {
     if (!confirm('Are you sure you want to delete this credit package?')) return;
 
     try {
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-      const response = await fetch(`${apiBaseUrl}/admin/pricing-management/packages/${id}`, {
+      const response = await fetch(getApiUrl(`${API_ENDPOINTS.ADMIN.PRICING_PACKAGES}/${id}`), {
         method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('admin_token')}`,
-        },
+        headers: createAuthHeaders(),
       });
 
       if (response.ok) {
@@ -332,10 +314,9 @@ const PricingManagement: React.FC = () => {
   const savePlan = async () => {
     setSaving(true);
     try {
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
       const url = editingPlan
-        ? `${apiBaseUrl}/admin/pricing-management/plans/${editingPlan.id}`
-        : `${apiBaseUrl}/admin/pricing-management/plans`;
+        ? getApiUrl(`${API_ENDPOINTS.ADMIN.PRICING_PLANS}/${editingPlan.id}`)
+        : getApiUrl(API_ENDPOINTS.ADMIN.PRICING_PLANS);
 
       const method = editingPlan ? 'PUT' : 'POST';
 
@@ -364,10 +345,7 @@ const PricingManagement: React.FC = () => {
 
       const response = await fetch(url, {
         method,
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('admin_token')}`,
-          'Content-Type': 'application/json',
-        },
+        headers: createAuthHeaders(),
         body: JSON.stringify(requestBody),
       });
 
@@ -396,13 +374,9 @@ const PricingManagement: React.FC = () => {
 
   const togglePlanStatus = async (id: string, isActive: boolean) => {
     try {
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-      const response = await fetch(`${apiBaseUrl}/admin/pricing-management/plans/${id}`, {
+      const response = await fetch(getApiUrl(`${API_ENDPOINTS.ADMIN.PRICING_PLANS}/${id}`), {
         method: 'PUT',
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('admin_token')}`,
-          'Content-Type': 'application/json',
-        },
+        headers: createAuthHeaders(),
         body: JSON.stringify({ isActive: !isActive }),
       });
 
@@ -418,12 +392,9 @@ const PricingManagement: React.FC = () => {
     if (!confirm('Are you sure you want to delete this subscription plan?')) return;
 
     try {
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-      const response = await fetch(`${apiBaseUrl}/admin/pricing-management/plans/${id}`, {
+      const response = await fetch(getApiUrl(`${API_ENDPOINTS.ADMIN.PRICING_PLANS}/${id}`), {
         method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('admin_token')}`,
-        },
+        headers: createAuthHeaders(),
       });
 
       if (response.ok) {
