@@ -111,6 +111,14 @@ const navigationItems: NavItem[] = [
     badge: 'NEW',
   },
   {
+    path: '/admin/payments',
+    label: 'Payment Gateways',
+    icon: CurrencyDollarIcon,
+    command: './payment-gateways --manage --multi-provider',
+    permission: 'payments:write',
+    badge: 'MULTI',
+  },
+  {
     path: '/admin/revenue',
     label: 'Revenue Analytics',
     icon: ChartBarIcon,

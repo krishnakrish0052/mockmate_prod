@@ -19,6 +19,7 @@ import IconManagement from './pages/IconManagement';
 import AppManagement from './pages/AppManagement';
 import PolicyManagement from './components/PolicyManagement';
 import AlertManagement from './pages/AlertManagement';
+import PaymentManagement from './pages/PaymentManagement';
 import { TerminalWindow, TypingText, MatrixRain } from './components/ui/CliComponents';
 
 // Protected Route Component
@@ -146,6 +147,9 @@ function App() {
 
             {/* Policy Management */}
             <Route path='policy-management' element={<PolicyManagement />} />
+
+            {/* Payment Management */}
+            <Route path='payments' element={<PaymentManagement />} />
 
             {/* Alert Management */}
             <Route path='alerts' element={<AlertManagement />} />
