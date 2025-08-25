@@ -601,6 +601,67 @@ router.get(
   })
 );
 
+// Update admin notes only (PATCH method for partial updates)
+router.patch(
+  '/:id',
+  requirePermission(['users.write']),
+  [
+    param('id').isUUID().withMessage('Invalid user ID'),
+    body('admin_notes').optional().isString().withMessage('Invalid admin notes'),
+  ],
+  asyncHandler(async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const database = req.app.locals.database;
+    const { id } = req.params;
+    const { admin_notes } = req.body;
+    const adminId = req.admin.id;
+
+    // Check if user exists
+    const userCheck = await database.query('SELECT name, email FROM users WHERE id = $1', [id]);
+    if (userCheck.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    // Update admin notes
+    const result = await database.query(
+      'UPDATE users SET admin_notes = $1, updated_at = NOW() WHERE id = $2 RETURNING admin_notes',
+      [admin_notes, id]
+    );
+
+    // Log admin activity
+    await database.logAdminActivity({
+      adminId,
+      action: 'USER_ADMIN_NOTES_UPDATE',
+      ipAddress: req.ip,
+      userAgent: req.get('User-Agent'),
+      details: {
+        userId: id,
+        userName: userCheck.rows[0].name,
+        userEmail: userCheck.rows[0].email,
+        adminNotes: admin_notes,
+      },
+    });
+
+    res.json({
+      success: true,
+      message: 'Admin notes updated successfully',
+      data: {
+        user: {
+          id,
+          admin_notes: result.rows[0].admin_notes,
+        },
+      },
+    });
+  })
+);
+
 // Update user profile and admin fields
 router.put(
   '/:id',
@@ -910,6 +971,83 @@ router.post(
     res.json({
       success: true,
       message: 'User unsuspended successfully',
+    });
+  })
+);
+
+// Get user activity history
+router.get(
+  '/:id/history',
+  requirePermission(['users.read']),
+  [param('id').isUUID().withMessage('Invalid user ID')],
+  asyncHandler(async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const database = req.app.locals.database;
+    const { id } = req.params;
+
+    // Get user activity history from multiple sources
+    const activityQuery = `
+      SELECT 
+        ual.id,
+        ual.activity_type,
+        ual.description,
+        ual.ip_address,
+        ual.created_at,
+        ual.metadata,
+        s.session_name
+      FROM user_activity_logs ual
+      LEFT JOIN sessions s ON ual.session_id = s.id
+      WHERE ual.user_id = $1
+      
+      UNION ALL
+      
+      SELECT 
+        ct.id,
+        CASE 
+          WHEN ct.transaction_type = 'usage' THEN 'credit_usage'
+          WHEN ct.transaction_type = 'purchase' THEN 'credit_purchase'
+          WHEN ct.transaction_type = 'adjustment' THEN 'credit_adjustment'
+          ELSE 'credit_' || ct.transaction_type
+        END as activity_type,
+        ct.description,
+        NULL as ip_address,
+        ct.created_at,
+        json_build_object(
+          'credits_amount', ct.credits_amount,
+          'admin_user_id', ct.admin_user_id,
+          'session_id', ct.session_id,
+          'payment_id', ct.payment_id
+        ) as metadata,
+        s.session_name
+      FROM credit_transactions ct
+      LEFT JOIN sessions s ON ct.session_id = s.id
+      WHERE ct.user_id = $1
+      
+      ORDER BY created_at DESC
+      LIMIT 100
+    `;
+
+    const historyResult = await database.query(activityQuery, [id]);
+
+    const history = historyResult.rows.map(row => ({
+      id: row.id,
+      activity_type: row.activity_type,
+      description: row.description,
+      metadata: row.metadata || {},
+      created_at: row.created_at,
+      session_name: row.session_name,
+      ip_address: row.ip_address,
+    }));
+
+    res.json({
+      success: true,
+      data: {
+        history,
+      },
     });
   })
 );

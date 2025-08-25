@@ -30,26 +30,22 @@ interface UserDetailsProps {
 interface UserDetail {
   id: string;
   name: string;
-  first_name: string;
-  last_name: string;
+  firstName?: string;
+  lastName?: string;
   email: string;
   credits: number;
-  is_active: boolean;
-  is_suspended: boolean;
-  subscription_type: string;
-  subscription_status: string;
-  registration_date: string;
-  last_active: string;
-  total_sessions: number;
-  total_payments: number;
-  total_revenue: number;
-  desktop_connected: boolean;
-  resume_uploaded: boolean;
-  profile_completed: number;
-  admin_notes?: string;
-  suspension_reason?: string;
-  created_at: string;
-  updated_at: string;
+  isActive: boolean;
+  isSuspended: boolean;
+  subscriptionTier: string;
+  registrationSource?: string;
+  createdAt: string;
+  lastActivity?: string;
+  totalSessions: number;
+  totalSpent?: number;
+  lifetimeValue?: number;
+  adminNotes?: string;
+  suspensionReason?: string;
+  preferences?: any;
 }
 
 interface UserHistory {
@@ -87,8 +83,8 @@ const UserDetails: React.FC<UserDetailsProps> = ({ userId, onClose, onUserUpdate
       if (response.ok) {
         const result = await response.json();
         if (result.success) {
-          setUser(result.data.user);
-          setAdminNotes(result.data.user.admin_notes || '');
+          setUser(result.data.profile);
+          setAdminNotes(result.data.profile.adminNotes || '');
         }
       }
     } catch (error) {
@@ -129,10 +125,10 @@ const UserDetails: React.FC<UserDetailsProps> = ({ userId, onClose, onUserUpdate
       if (response.ok) {
         const result = await response.json();
         if (result.success) {
-          setUser(prev => (prev ? { ...prev, admin_notes: adminNotes } : null));
+          setUser(prev => (prev ? { ...prev, adminNotes: adminNotes } : null));
           setEditingNotes(false);
           if (onUserUpdate && user) {
-            onUserUpdate({ ...user, admin_notes: adminNotes });
+            onUserUpdate({ ...user, adminNotes: adminNotes });
           }
         }
       }
@@ -146,13 +142,17 @@ const UserDetails: React.FC<UserDetailsProps> = ({ userId, onClose, onUserUpdate
   const adjustCredits = async () => {
     const newCredits = prompt('Enter new credit amount:', user?.credits.toString());
     if (newCredits && !isNaN(parseInt(newCredits))) {
+      const currentCredits = user?.credits || 0;
+      const adjustment = parseInt(newCredits) - currentCredits;
+      
       try {
         const response = await fetch(getApiUrl(`/admin/users-enhanced/${userId}/credits/adjust`), {
-          method: 'PATCH',
+          method: 'POST',
           headers: createAuthHeaders(),
           body: JSON.stringify({
-            credits: parseInt(newCredits),
-            admin_notes: `Credits adjusted from ${user?.credits} to ${newCredits} by admin on ${new Date().toISOString()}`,
+            amount: adjustment,
+            reason: `Credits adjusted from ${currentCredits} to ${newCredits} by admin`,
+            type: 'adjustment'
           }),
         });
 
@@ -175,7 +175,7 @@ const UserDetails: React.FC<UserDetailsProps> = ({ userId, onClose, onUserUpdate
   const toggleSuspension = async () => {
     if (!user) return;
 
-    const action = user.is_suspended ? 'unsuspend' : 'suspend';
+    const action = user.isSuspended ? 'unsuspend' : 'suspend';
     const reason = action === 'suspend' ? prompt('Enter suspension reason:') : null;
 
     if (action === 'suspend' && !reason) return;
@@ -187,7 +187,7 @@ const UserDetails: React.FC<UserDetailsProps> = ({ userId, onClose, onUserUpdate
           : {};
 
       const response = await fetch(getApiUrl(`/admin/users-enhanced/${userId}/${action}`), {
-        method: 'PATCH',
+        method: 'POST',
         headers: createAuthHeaders(),
         body: Object.keys(body).length > 0 ? JSON.stringify(body) : undefined,
       });
@@ -208,8 +208,8 @@ const UserDetails: React.FC<UserDetailsProps> = ({ userId, onClose, onUserUpdate
   };
 
   const getStatusBadge = (user: UserDetail) => {
-    if (user.is_suspended) return <CliBadge variant='danger'>SUSPENDED</CliBadge>;
-    if (user.is_active) return <CliBadge variant='success'>ACTIVE</CliBadge>;
+    if (user.isSuspended) return <CliBadge variant='danger'>SUSPENDED</CliBadge>;
+    if (user.isActive) return <CliBadge variant='success'>ACTIVE</CliBadge>;
     return <CliBadge variant='warning'>INACTIVE</CliBadge>;
   };
 
@@ -292,7 +292,7 @@ const UserDetails: React.FC<UserDetailsProps> = ({ userId, onClose, onUserUpdate
                 </div>
                 <div>
                   <TypingText
-                    text={user.name || `${user.first_name} ${user.last_name}`.trim()}
+                    text={user.name || `${user.firstName} ${user.lastName}`.trim()}
                     className='font-mono text-xl font-bold text-primary-500'
                   />
                   <div className='font-mono text-sm text-cli-light-gray'>
@@ -343,7 +343,7 @@ const UserDetails: React.FC<UserDetailsProps> = ({ userId, onClose, onUserUpdate
                         <div className='flex justify-between'>
                           <span className='text-cli-light-gray'>Name:</span>
                           <span className='text-cli-white'>
-                            {user.name || `${user.first_name} ${user.last_name}`.trim()}
+                            {user.name || `${user.firstName} ${user.lastName}`.trim()}
                           </span>
                         </div>
                         <div className='flex justify-between'>
@@ -359,19 +359,15 @@ const UserDetails: React.FC<UserDetailsProps> = ({ userId, onClose, onUserUpdate
                           <span className='text-cli-green'>{user.credits}</span>
                         </div>
                         <div className='flex justify-between'>
-                          <span className='text-cli-light-gray'>Profile Complete:</span>
-                          <span className='text-cli-cyan'>{user.profile_completed}%</span>
-                        </div>
-                        <div className='flex justify-between'>
                           <span className='text-cli-light-gray'>Registered:</span>
                           <span className='text-cli-white'>
-                            {new Date(user.registration_date).toLocaleDateString()}
+                            {new Date(user.createdAt).toLocaleDateString()}
                           </span>
                         </div>
                         <div className='flex justify-between'>
                           <span className='text-cli-light-gray'>Last Active:</span>
                           <span className='text-cli-white'>
-                            {new Date(user.last_active).toLocaleDateString()}
+                            {user.lastActivity ? new Date(user.lastActivity).toLocaleDateString() : 'Never'}
                           </span>
                         </div>
                       </div>
@@ -388,42 +384,20 @@ const UserDetails: React.FC<UserDetailsProps> = ({ userId, onClose, onUserUpdate
                         <div className='flex justify-between'>
                           <span className='text-cli-light-gray'>Plan:</span>
                           <span className='text-cli-green'>
-                            {user.subscription_type.toUpperCase()}
-                          </span>
-                        </div>
-                        <div className='flex justify-between'>
-                          <span className='text-cli-light-gray'>Status:</span>
-                          <span className='text-cli-cyan'>
-                            {user.subscription_status.toUpperCase()}
+                            {user.subscriptionTier?.toUpperCase() || 'N/A'}
                           </span>
                         </div>
                         <div className='flex justify-between'>
                           <span className='text-cli-light-gray'>Total Sessions:</span>
-                          <span className='text-cli-white'>{user.total_sessions}</span>
+                          <span className='text-cli-white'>{user.totalSessions}</span>
                         </div>
                         <div className='flex justify-between'>
-                          <span className='text-cli-light-gray'>Total Payments:</span>
-                          <span className='text-cli-white'>{user.total_payments}</span>
+                          <span className='text-cli-light-gray'>Total Spent:</span>
+                          <span className='text-cli-green'>${user.totalSpent?.toFixed(2) || '0.00'}</span>
                         </div>
                         <div className='flex justify-between'>
-                          <span className='text-cli-light-gray'>Total Revenue:</span>
-                          <span className='text-cli-green'>${user.total_revenue}</span>
-                        </div>
-                        <div className='flex justify-between'>
-                          <span className='text-cli-light-gray'>Desktop App:</span>
-                          <span
-                            className={user.desktop_connected ? 'text-cli-green' : 'text-cli-amber'}
-                          >
-                            {user.desktop_connected ? 'Connected' : 'Not Connected'}
-                          </span>
-                        </div>
-                        <div className='flex justify-between'>
-                          <span className='text-cli-light-gray'>Resume:</span>
-                          <span
-                            className={user.resume_uploaded ? 'text-cli-green' : 'text-cli-amber'}
-                          >
-                            {user.resume_uploaded ? 'Uploaded' : 'Not Uploaded'}
-                          </span>
+                          <span className='text-cli-light-gray'>Lifetime Value:</span>
+                          <span className='text-cli-green'>${user.lifetimeValue?.toFixed(2) || '0.00'}</span>
                         </div>
                       </div>
                     </div>
@@ -458,7 +432,7 @@ const UserDetails: React.FC<UserDetailsProps> = ({ userId, onClose, onUserUpdate
                               variant='secondary'
                               onClick={() => {
                                 setEditingNotes(false);
-                                setAdminNotes(user.admin_notes || '');
+                                setAdminNotes(user.adminNotes || '');
                               }}
                             >
                               Cancel
@@ -467,7 +441,7 @@ const UserDetails: React.FC<UserDetailsProps> = ({ userId, onClose, onUserUpdate
                         </div>
                       ) : (
                         <div className='font-mono text-sm text-cli-light-gray'>
-                          {user.admin_notes || 'No admin notes available.'}
+                          {user.adminNotes || 'No admin notes available.'}
                         </div>
                       )}
                     </div>
@@ -483,11 +457,11 @@ const UserDetails: React.FC<UserDetailsProps> = ({ userId, onClose, onUserUpdate
                           Adjust Credits
                         </CliButton>
                         <CliButton
-                          variant={user.is_suspended ? 'success' : 'danger'}
+                          variant={user.isSuspended ? 'success' : 'danger'}
                           onClick={toggleSuspension}
                         >
                           <ExclamationTriangleIcon className='mr-2 h-4 w-4' />
-                          {user.is_suspended ? 'Unsuspend User' : 'Suspend User'}
+                          {user.isSuspended ? 'Unsuspend User' : 'Suspend User'}
                         </CliButton>
                         <CliButton variant='secondary'>
                           <BellIcon className='mr-2 h-4 w-4' />
