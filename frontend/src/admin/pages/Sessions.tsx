@@ -22,6 +22,7 @@ import {
   ChatBubbleLeftIcon,
   ChartBarIcon,
 } from '@heroicons/react/24/outline';
+import { getApiUrl, createAuthHeaders } from '../utils/apiConfig';
 
 interface Session {
   id: string;
@@ -132,20 +133,14 @@ const Sessions: React.FC = () => {
   const fetchSessions = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('admin_token');
-      if (!token) {
-        throw new Error('No authentication token');
-      }
-
       const params = new URLSearchParams({
         page: page.toString(),
         limit: '20',
         ...filters,
       });
 
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-      const response = await fetch(`${apiBaseUrl}/admin/sessions?${params}`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const response = await fetch(`${getApiUrl('/admin/sessions')}?${params}`, {
+        headers: createAuthHeaders(),
       });
 
       if (response.ok) {
@@ -165,14 +160,8 @@ const Sessions: React.FC = () => {
   const fetchSessionDetail = async (sessionId: string) => {
     setDetailLoading(true);
     try {
-      const token = localStorage.getItem('admin_token');
-      if (!token) {
-        throw new Error('No authentication token');
-      }
-
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-      const response = await fetch(`${apiBaseUrl}/admin/sessions/${sessionId}`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const response = await fetch(getApiUrl(`/admin/sessions/${sessionId}`), {
+        headers: createAuthHeaders(),
       });
 
       if (response.ok) {
