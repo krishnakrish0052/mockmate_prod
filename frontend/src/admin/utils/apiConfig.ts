@@ -41,7 +41,7 @@ export const API_ENDPOINTS = {
   APP_MANAGEMENT: '/admin/apps',
   SESSIONS: '/admin/sessions',
   REPORTS: '/admin/reports',
-  PROFILE: '/admin-profile',
+  PROFILE: '/admin/profile',
   PRICING: '/admin/pricing',
 } as const;
 

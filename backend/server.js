@@ -722,9 +722,9 @@ app.use(
   adminRoutes
 );
 
-// Admin profile route
+// Admin profile route - moved to /api/admin/profile for consistency
 app.use(
-  '/api/admin-profile',
+  '/api/admin/profile',
   (req, res, next) => {
     // Apply admin authentication
     return adminAuth(req, res, next);
