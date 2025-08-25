@@ -21,6 +21,7 @@ import {
   ArrowDownTrayIcon,
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
+import { getApiUrl, API_ENDPOINTS, createAuthHeaders } from '../utils/apiConfig';
 import { Line, Bar, Pie } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -105,12 +106,9 @@ const Revenue: React.FC = () => {
     setError(null);
 
     try {
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-      const response = await fetch(`${apiBaseUrl}/admin/analytics/revenue?period=${period}`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('admin_token')}`,
-          'Content-Type': 'application/json',
-        },
+      const token = localStorage.getItem('admin_token');
+      const response = await fetch(`${getApiUrl(API_ENDPOINTS.ANALYTICS)}/revenue?period=${period}`, {
+        headers: createAuthHeaders(token || ''),
       });
 
       if (response.ok) {
@@ -133,13 +131,10 @@ const Revenue: React.FC = () => {
 
   const exportReport = async (format: 'csv' | 'pdf') => {
     try {
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-      const response = await fetch(`${apiBaseUrl}/admin/analytics/export`, {
+      const token = localStorage.getItem('admin_token');
+      const response = await fetch(`${getApiUrl(API_ENDPOINTS.ANALYTICS)}/export`, {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('admin_token')}`,
-          'Content-Type': 'application/json',
-        },
+        headers: createAuthHeaders(token || ''),
         body: JSON.stringify({
           type: 'revenue',
           format,

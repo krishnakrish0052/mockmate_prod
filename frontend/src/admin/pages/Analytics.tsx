@@ -18,6 +18,7 @@ import {
   CalendarDaysIcon,
   FunnelIcon,
 } from '@heroicons/react/24/outline';
+import { getApiUrl, API_ENDPOINTS, createAuthHeaders } from '../utils/apiConfig';
 
 interface AnalyticsData {
   userGrowth: {
@@ -67,21 +68,21 @@ const Analytics: React.FC = () => {
         throw new Error('No authentication token');
       }
 
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+      const headers = createAuthHeaders(token);
 
       // Fetch data from multiple endpoints
       const [overviewRes, usersRes, sessionsRes, revenueRes] = await Promise.all([
-        fetch(`${apiBaseUrl}/admin/analytics/overview`, {
-          headers: { Authorization: `Bearer ${token}` },
+        fetch(`${getApiUrl(API_ENDPOINTS.ANALYTICS)}/overview`, {
+          headers,
         }),
-        fetch(`${apiBaseUrl}/admin/analytics/users?period=${timeRange}`, {
-          headers: { Authorization: `Bearer ${token}` },
+        fetch(`${getApiUrl(API_ENDPOINTS.ANALYTICS)}/users?period=${timeRange}`, {
+          headers,
         }),
-        fetch(`${apiBaseUrl}/admin/analytics/sessions?period=${timeRange}`, {
-          headers: { Authorization: `Bearer ${token}` },
+        fetch(`${getApiUrl(API_ENDPOINTS.ANALYTICS)}/sessions?period=${timeRange}`, {
+          headers,
         }),
-        fetch(`${apiBaseUrl}/admin/analytics/revenue?period=${timeRange}`, {
-          headers: { Authorization: `Bearer ${token}` },
+        fetch(`${getApiUrl(API_ENDPOINTS.ANALYTICS)}/revenue?period=${timeRange}`, {
+          headers,
         }),
       ]);
 

@@ -15,6 +15,7 @@ import {
   QuestionMarkCircleIcon,
   ChatBubbleLeftIcon,
 } from '@heroicons/react/24/outline';
+import { getApiUrl, API_ENDPOINTS, createAuthHeaders } from '../utils/apiConfig';
 
 interface DashboardStats {
   users: {
@@ -83,13 +84,9 @@ const Dashboard: React.FC = () => {
   const fetchDashboardData = async () => {
     try {
       const token = localStorage.getItem('admin_token');
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
       // Fetch real data from the analytics overview API
-      const response = await fetch(`${apiBaseUrl}/api/admin/analytics/overview`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+      const response = await fetch(`${getApiUrl(API_ENDPOINTS.ANALYTICS)}/overview`, {
+        headers: createAuthHeaders(token || ''),
       });
 
       if (!response.ok) {
