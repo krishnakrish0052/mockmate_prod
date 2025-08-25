@@ -9,6 +9,7 @@ import {
   CliInput,
   MatrixRain,
 } from '../ui/CliComponents';
+import { getApiUrl, API_ENDPOINTS } from '../../utils/apiConfig';
 import './AppManagement.css';
 
 interface Platform {
@@ -205,8 +206,7 @@ const AppManagement: React.FC = () => {
       setUploadProgress(0);
       setError('');
 
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-      const uploadUrl = `${apiBaseUrl}/api/admin/apps/versions/upload`;
+      const uploadUrl = getApiUrl(API_ENDPOINTS.ADMIN.APP_UPLOAD);
       
       console.log('🚀 Starting upload to:', uploadUrl);
       console.log('📁 File size:', uploadForm.file?.size, 'bytes');

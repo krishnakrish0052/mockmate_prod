@@ -48,6 +48,10 @@ export const API_ENDPOINTS = {
     PRICING_PLANS: '/admin/pricing-management/plans',
     SYSTEM_HEALTH: '/admin/system/health',
     PAYMENT_CONFIGS: '/admin/payment-configs',
+    APP_PLATFORMS: '/admin/apps/platforms',
+    APP_VERSIONS: '/admin/apps/versions',
+    APP_STATISTICS: '/admin/apps/statistics',
+    APP_UPLOAD: '/admin/apps/versions/upload',
   },
 } as const;
 
