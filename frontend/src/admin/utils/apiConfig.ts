@@ -46,6 +46,8 @@ export const API_ENDPOINTS = {
   ADMIN: {
     PRICING_PACKAGES: '/admin/pricing-management/packages',
     PRICING_PLANS: '/admin/pricing-management/plans',
+    SYSTEM_HEALTH: '/admin/system/health',
+    PAYMENT_CONFIGS: '/admin/payment-configs',
   },
 } as const;
 

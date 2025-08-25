@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAdminAuth } from '../contexts/AdminAuthContext';
 import { TerminalWindow, TypingText, CliCard, CliBadge } from '../components/ui/CliComponents';
+import { getApiUrl, API_ENDPOINTS, createAuthHeaders } from '../utils/apiConfig';
 import {
   ServerIcon,
   CogIcon,
@@ -73,14 +74,8 @@ const SystemHealth: React.FC = () => {
 
   const fetchSystemStats = async () => {
     try {
-      const token = localStorage.getItem('adminToken') || localStorage.getItem('admin_token');
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-
-      const response = await fetch(`${apiBaseUrl}/admin/system/health`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+      const response = await fetch(getApiUrl(API_ENDPOINTS.ADMIN.SYSTEM_HEALTH), {
+        headers: createAuthHeaders(),
       });
 
       if (response.ok) {
@@ -136,14 +131,8 @@ const SystemHealth: React.FC = () => {
 
   const fetchPaymentConfigurations = async () => {
     try {
-      const token = localStorage.getItem('adminToken') || localStorage.getItem('admin_token');
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-
-      const response = await fetch(`${apiBaseUrl}/admin/payment-configs`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+      const response = await fetch(getApiUrl(API_ENDPOINTS.ADMIN.PAYMENT_CONFIGS), {
+        headers: createAuthHeaders(),
       });
 
       if (response.ok) {
