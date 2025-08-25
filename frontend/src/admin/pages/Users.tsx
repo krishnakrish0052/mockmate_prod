@@ -28,7 +28,7 @@ import {
   TagIcon,
 } from '@heroicons/react/24/outline';
 import UserDetails from '../components/users/UserDetails';
-import { getApiUrl } from '../utils/apiConfig';
+import { getApiUrl, createAuthHeaders } from '../utils/apiConfig';
 
 interface User {
   id: string;
@@ -142,10 +142,7 @@ const Users: React.FC = () => {
       }
 
       const response = await fetch(`${getApiUrl('/admin/users-enhanced')}?${params}`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('admin_token')}`,
-          'Content-Type': 'application/json',
-        },
+        headers: createAuthHeaders(),
       });
 
       if (response.ok) {
@@ -199,10 +196,7 @@ const Users: React.FC = () => {
 
       const response = await fetch(endpoint, {
         method,
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('admin_token')}`,
-          'Content-Type': 'application/json',
-        },
+        headers: createAuthHeaders(),
         body: Object.keys(body).length > 0 ? JSON.stringify(body) : undefined,
       });
 
@@ -226,10 +220,7 @@ const Users: React.FC = () => {
     try {
       const response = await fetch(getApiUrl(`/admin/users-enhanced/${userId}/credits/adjust`), {
         method: 'PATCH',
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('admin_token')}`,
-          'Content-Type': 'application/json',
-        },
+        headers: createAuthHeaders(),
         body: JSON.stringify({
           amount: credits,
           reason: `Credits adjusted to ${credits} by admin on ${new Date().toISOString()}`,
@@ -264,10 +255,7 @@ const Users: React.FC = () => {
     try {
       const response = await fetch(getApiUrl(`/admin/users-enhanced/${editingUser.id}`), {
         method: 'PATCH',
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('admin_token')}`,
-          'Content-Type': 'application/json',
-        },
+        headers: createAuthHeaders(),
         body: JSON.stringify({
           firstName: updatedUser.firstName,
           lastName: updatedUser.lastName,
@@ -335,10 +323,7 @@ const Users: React.FC = () => {
     try {
       const response = await fetch(getApiUrl(`/admin/users-enhanced/${userId}`), {
         method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('admin_token')}`,
-          'Content-Type': 'application/json',
-        },
+        headers: createAuthHeaders(),
       });
 
       if (response.ok) {
