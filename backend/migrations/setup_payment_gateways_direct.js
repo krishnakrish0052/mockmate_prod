@@ -6,7 +6,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 /**
- * Migration to set up default payment gateway configurations
+ * Direct migration to set up default payment gateway configurations
  * This adds Stripe and Cashfree payment configurations to the database
  */
 
@@ -17,40 +17,30 @@ async function setupPaymentGateways() {
     port: parseInt(process.env.DB_PORT) || 5432,
     database: process.env.DB_NAME || 'mockmate_db',
     user: process.env.DB_USER || 'mockmate_user',
+    password: process.env.DB_PASSWORD || '',
     max: 10,
     idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 5000,
+    connectionTimeoutMillis: 10000,
   };
-
-  // Only add password if it exists and is not empty
-  if (process.env.DB_PASSWORD && process.env.DB_PASSWORD.trim() !== '') {
-    dbConfig.password = String(process.env.DB_PASSWORD.trim());
-  } else {
-    console.log('⚠️  No database password provided, attempting passwordless connection');
-  }
 
   console.log('🔄 Connecting to database:', {
     host: dbConfig.host,
     port: dbConfig.port,
     database: dbConfig.database,
     user: dbConfig.user,
-    hasPassword: !!dbConfig.password
+    hasPassword: !!dbConfig.password && dbConfig.password.length > 0
   });
 
   const db = new Pool(dbConfig);
   
   try {
     // Test the connection
+    console.log('🔍 Testing database connection...');
     const client = await db.connect();
-    await client.query('SELECT NOW()');
+    const result = await client.query('SELECT NOW() as current_time, current_database() as database_name');
+    console.log('✅ Database connection established:', result.rows[0]);
     client.release();
-    console.log('✅ Database connection established');
-  } catch (error) {
-    console.error('❌ Database connection failed:', error.message);
-    throw error;
-  }
-  
-  try {
+    
     console.log('🔄 Setting up payment gateway configurations...');
     
     // Check if payment_configurations table exists, if not create it
@@ -97,6 +87,9 @@ async function setupPaymentGateways() {
         CREATE INDEX idx_payment_configurations_priority ON payment_configurations(priority DESC);
         CREATE INDEX idx_payment_configurations_provider ON payment_configurations(provider_name);
       `);
+      console.log('✅ payment_configurations table created');
+    } else {
+      console.log('📋 payment_configurations table already exists');
     }
 
     // Check if health checks table exists, if not create it
@@ -127,6 +120,9 @@ async function setupPaymentGateways() {
         CREATE INDEX idx_health_checks_config ON payment_provider_health_checks(config_id);
         CREATE INDEX idx_health_checks_created_at ON payment_provider_health_checks(created_at DESC);
       `);
+      console.log('✅ payment_provider_health_checks table created');
+    } else {
+      console.log('📋 payment_provider_health_checks table already exists');
     }
 
     // Check if audit log table exists, if not create it
@@ -158,6 +154,9 @@ async function setupPaymentGateways() {
         CREATE INDEX idx_audit_logs_config ON payment_config_audit_logs(config_id);
         CREATE INDEX idx_audit_logs_created_at ON payment_config_audit_logs(created_at DESC);
       `);
+      console.log('✅ payment_config_audit_logs table created');
+    } else {
+      console.log('📋 payment_config_audit_logs table already exists');
     }
 
     // Check if configurations already exist
@@ -188,7 +187,7 @@ async function setupPaymentGateways() {
           publishable_key: 'pk_test_your_stripe_publishable_key',
           webhook_secret: 'whsec_your_webhook_secret'
         }),
-        `${process.env.BACKEND_URL || 'http://localhost:5000'}/api/payments/webhook`,
+        `${process.env.BACKEND_URL || process.env.BASE_URL || 'http://localhost:5000'}/api/payments/webhook`,
         JSON.stringify(['USD', 'EUR', 'GBP', 'CAD', 'AUD']),
         JSON.stringify(['US', 'CA', 'GB', 'AU', 'DE', 'FR', 'IT', 'ES', 'NL', 'BE']),
         JSON.stringify({
@@ -235,7 +234,7 @@ async function setupPaymentGateways() {
           secret_key: 'your_cashfree_secret_key',
           is_test_mode: true
         }),
-        `${process.env.BACKEND_URL || 'http://localhost:5000'}/api/payments/cashfree/webhook`,
+        `${process.env.BACKEND_URL || process.env.BASE_URL || 'http://localhost:5000'}/api/payments/cashfree/webhook`,
         JSON.stringify(['INR', 'USD']),
         JSON.stringify(['IN']),
         JSON.stringify({
@@ -287,22 +286,34 @@ async function setupPaymentGateways() {
 
   } catch (error) {
     console.error('❌ Error setting up payment gateways:', error);
-    logger.error('Payment gateway setup failed', { error: error.message });
     throw error;
+  } finally {
+    // Close database connection
+    await db.end();
+    console.log('🔌 Database connection closed');
   }
 }
 
 // Run if called directly
-if (import.meta.url === `file://${process.argv[1]}`) {
-  setupPaymentGateways()
-    .then(() => {
-      console.log('🎉 Migration completed successfully');
-      process.exit(0);
-    })
-    .catch(error => {
-      console.error('💥 Migration failed:', error);
-      process.exit(1);
-    });
-}
+console.log('🚀 Starting migration script...');
+console.log('Module URL:', import.meta.url);
+console.log('Process argv[1]:', process.argv[1]);
+
+// Always run the migration when this script is executed
+setupPaymentGateways()
+  .then(() => {
+    console.log('🎉 Migration completed successfully');
+    process.exit(0);
+  })
+  .catch(error => {
+    console.error('💥 Migration failed:', error.message);
+    console.error('💡 Please check your database connection settings:');
+    console.error('  - DB_HOST:', process.env.DB_HOST || 'localhost');
+    console.error('  - DB_PORT:', process.env.DB_PORT || '5432');
+    console.error('  - DB_NAME:', process.env.DB_NAME || 'mockmate_db');
+    console.error('  - DB_USER:', process.env.DB_USER || 'mockmate_user');
+    console.error('  - DB_PASSWORD:', process.env.DB_PASSWORD ? '[CONFIGURED]' : '[NOT SET]');
+    process.exit(1);
+  });
 
 export { setupPaymentGateways };
