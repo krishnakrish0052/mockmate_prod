@@ -127,11 +127,12 @@ class CashfreeService {
       let paymentLink = null;
       
       if (sessionId) {
-        // Use the standard checkout URL format for One Click Checkout
+        // For One Click Checkout, use the standard checkout flow, not links
+        // According to docs, One Click Checkout uses regular checkout with enhanced UX
         const checkoutBaseUrl = this.baseURL.includes('sandbox') 
-          ? 'https://payments-test.cashfree.com' 
+          ? 'https://sandbox.cashfree.com' 
           : 'https://payments.cashfree.com';
-        paymentLink = `${checkoutBaseUrl}/links/${sessionId}`;
+        paymentLink = `${checkoutBaseUrl}/checkout?payment_session_id=${sessionId}`;
       }
       
       return {
