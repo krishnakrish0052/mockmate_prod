@@ -1,4 +1,3 @@
-import Stripe from 'stripe';
 import axios from 'axios';
 import { PaymentConfiguration } from '../models/PaymentConfiguration.js';
 import { getDatabase } from '../config/database.js';
@@ -61,8 +60,8 @@ class PaymentService {
     const providerConfig = fullConfig.configuration;
 
     switch (config.provider_name.toLowerCase()) {
-      case 'stripe':
-        await this.initializeStripe(config, providerConfig);
+      case 'cashfree':
+        await this.initializeCashfree(config, providerConfig);
         break;
       case 'paypal':
         await this.initializePayPal(config, providerConfig);
@@ -73,9 +72,6 @@ class PaymentService {
       case 'square':
         await this.initializeSquare(config, providerConfig);
         break;
-      case 'cashfree':
-        await this.initializeCashfree(config, providerConfig);
-        break;
       default:
         logger.warn(`Unknown payment provider: ${config.provider_name}`);
     }
@@ -84,24 +80,6 @@ class PaymentService {
     this.configs.set(config.id, config);
   }
 
-  // Initialize Stripe provider
-  async initializeStripe(config, providerConfig) {
-    const { secret_key, publishable_key, webhook_endpoint } = providerConfig;
-
-    if (!secret_key || !publishable_key) {
-      throw new Error('Stripe configuration missing required keys');
-    }
-
-    const stripe = new Stripe(secret_key);
-
-    this.providers.set(config.id, {
-      type: 'stripe',
-      client: stripe,
-      config: config,
-      publishableKey: publishable_key,
-      webhookEndpoint: webhook_endpoint,
-    });
-  }
 
   // Initialize PayPal provider
   async initializePayPal(config, providerConfig) {
@@ -194,34 +172,30 @@ class PaymentService {
     });
   }
 
-  // Get optimal payment provider for a transaction
-  async getOptimalProvider(amount, currency = 'USD', country = 'US', userId = null) {
+  // Get optimal payment provider for a transaction (defaults to Cashfree)
+  async getOptimalProvider(amount, currency = 'INR', country = 'IN', userId = null) {
     await this.initializeProviders();
 
-    const db = getDatabase();
-    const result = await db.query('SELECT * FROM get_optimal_payment_provider($1, $2, $3, $4)', [
-      amount,
-      currency,
-      country,
-      userId,
-    ]);
-
-    if (result.rows.length === 0) {
-      throw new Error('No suitable payment provider found');
+    // Priority order: Cashfree first, then others
+    const providers = Array.from(this.providers.values());
+    
+    // Look for Cashfree provider first
+    let provider = providers.find(p => p.type === 'cashfree');
+    
+    // Fallback to any other provider if Cashfree not available
+    if (!provider) {
+      provider = providers[0];
     }
 
-    const optimalConfig = result.rows[0];
-    const provider = this.providers.get(optimalConfig.config_id);
-
     if (!provider) {
-      throw new Error('Optimal provider not initialized');
+      throw new Error('No suitable payment provider found');
     }
 
     return provider;
   }
 
-  // Create payment intent
-  async createPaymentIntent(amount, currency, metadata = {}, userId = null, country = 'US') {
+  // Create payment intent (primarily using Cashfree)
+  async createPaymentIntent(amount, currency, metadata = {}, userId = null, country = 'IN') {
     const provider = await this.getOptimalProvider(amount, currency, country, userId);
 
     let paymentIntent;
@@ -229,13 +203,8 @@ class PaymentService {
 
     try {
       switch (provider.type) {
-        case 'stripe':
-          paymentIntent = await this.createStripePaymentIntent(
-            provider,
-            amount,
-            currency,
-            metadata
-          );
+        case 'cashfree':
+          paymentIntent = await this.createCashfreeOrder(provider, amount, currency, metadata);
           break;
         case 'paypal':
           paymentIntent = await this.createPayPalOrder(provider, amount, currency, metadata);
@@ -245,9 +214,6 @@ class PaymentService {
           break;
         case 'square':
           paymentIntent = await this.createSquarePayment(provider, amount, currency, metadata);
-          break;
-        case 'cashfree':
-          paymentIntent = await this.createCashfreeOrder(provider, amount, currency, metadata);
           break;
         default:
           throw new Error(`Payment intent creation not implemented for ${provider.type}`);
@@ -281,19 +247,6 @@ class PaymentService {
     }
   }
 
-  // Create Stripe payment intent
-  async createStripePaymentIntent(provider, amount, currency, metadata) {
-    const stripe = provider.client;
-
-    return await stripe.paymentIntents.create({
-      amount: Math.round(amount * 100), // Convert to cents
-      currency: currency.toLowerCase(),
-      metadata,
-      automatic_payment_methods: {
-        enabled: true,
-      },
-    });
-  }
 
   // Create PayPal order
   async createPayPalOrder(provider, amount, currency, metadata) {
@@ -419,10 +372,8 @@ class PaymentService {
       let result;
 
       switch (provider.type) {
-        case 'stripe':
-          result = await provider.client.paymentIntents.confirm(paymentId, {
-            payment_method: paymentMethodId,
-          });
+        case 'cashfree':
+          result = await this.getCashfreeOrderStatus(provider, paymentId);
           break;
         case 'paypal':
           result = await this.capturePayPalOrder(provider, paymentId);
@@ -430,9 +381,6 @@ class PaymentService {
         case 'razorpay':
           // Razorpay payments are captured automatically after successful payment
           result = await this.getRazorpayPayment(provider, paymentId);
-          break;
-        case 'cashfree':
-          result = await this.getCashfreeOrderStatus(provider, paymentId);
           break;
         default:
           throw new Error(`Payment confirmation not implemented for ${provider.type}`);
@@ -495,14 +443,6 @@ class PaymentService {
     }
 
     switch (provider.type) {
-      case 'stripe':
-        return await provider.client.refunds.create({
-          payment_intent: paymentId,
-          amount: amount ? Math.round(amount * 100) : undefined,
-        });
-      case 'paypal':
-        // PayPal refund implementation
-        throw new Error('PayPal refunds not implemented yet');
       case 'cashfree':
         const refundData = {
           cfPaymentId: paymentId,
@@ -512,6 +452,9 @@ class PaymentService {
         };
         const refundResult = await provider.client.processRefund(refundData);
         return refundResult.data;
+      case 'paypal':
+        // PayPal refund implementation
+        throw new Error('PayPal refunds not implemented yet');
       default:
         throw new Error(`Refund not implemented for ${provider.type}`);
     }
@@ -520,11 +463,10 @@ class PaymentService {
   // Validate provider configuration
   static async validateProviderConfiguration(providerName, configuration) {
     const requiredFields = {
-      stripe: ['secret_key', 'publishable_key'],
+      cashfree: ['app_id', 'secret_key'],
       paypal: ['client_id', 'client_secret'],
       razorpay: ['key_id', 'key_secret'],
       square: ['access_token', 'application_id'],
-      cashfree: ['app_id', 'secret_key'],
     };
 
     const required = requiredFields[providerName.toLowerCase()] || [];
@@ -537,15 +479,6 @@ class PaymentService {
     }
 
     // Additional validation
-    if (providerName.toLowerCase() === 'stripe') {
-      if (configuration.secret_key && !configuration.secret_key.startsWith('sk_')) {
-        errors.push('Invalid Stripe secret key format');
-      }
-      if (configuration.publishable_key && !configuration.publishable_key.startsWith('pk_')) {
-        errors.push('Invalid Stripe publishable key format');
-      }
-    }
-
     if (providerName.toLowerCase() === 'cashfree') {
       const cashfreeValidation = CashfreeService.validateConfiguration(configuration);
       if (!cashfreeValidation.valid) {
@@ -618,8 +551,11 @@ class PaymentService {
 
     try {
       switch (provider.type) {
-        case 'stripe':
-          await provider.client.accounts.retrieve();
+        case 'cashfree':
+          const testResult = await provider.client.testConnection();
+          if (!testResult.success) {
+            throw new Error(testResult.error);
+          }
           break;
         case 'paypal':
           // Test PayPal connectivity by getting a new access token
@@ -634,12 +570,6 @@ class PaymentService {
             },
             params: { count: 1 },
           });
-          break;
-        case 'cashfree':
-          const testResult = await provider.client.testConnection();
-          if (!testResult.success) {
-            throw new Error(testResult.error);
-          }
           break;
         default:
           throw new Error(`Connectivity test not implemented for ${provider.type}`);

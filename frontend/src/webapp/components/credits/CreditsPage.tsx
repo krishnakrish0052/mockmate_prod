@@ -13,8 +13,6 @@ import {
   XMarkIcon,
 } from '@heroicons/react/24/outline';
 import axios from 'axios';
-import { Elements } from '@stripe/react-stripe-js';
-import { loadStripe } from '@stripe/stripe-js';
 import {
   TerminalWindow,
   TypingText,
@@ -23,7 +21,6 @@ import {
   MatrixRain,
   CliBadge,
 } from '../ui/CliComponents';
-import StripePaymentForm from './StripePaymentForm';
 import CashfreePaymentForm from './CashfreePaymentForm';
 
 interface CreditPackage {
@@ -52,81 +49,18 @@ const CreditsPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [packagesLoading, setPackagesLoading] = useState(true);
   const [selectedPackage, setSelectedPackage] = useState<string | null>(null);
-  const [selectedGateway, setSelectedGateway] = useState<string>('stripe');
+  const [selectedGateway, setSelectedGateway] = useState<string>('cashfree');
   const [availableGateways, setAvailableGateways] = useState<PaymentGateway[]>([]);
   const [creditPackages, setCreditPackages] = useState<CreditPackage[]>([]);
-  const [stripeInstance, setStripeInstance] = useState<any>(null);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
-  const [currentPaymentIntent, setCurrentPaymentIntent] = useState<any>(null);
+  const [currentOrderData, setCurrentOrderData] = useState<any>(null);
   const [currentPackage, setCurrentPackage] = useState<CreditPackage | null>(null);
-  const [currentGateway, setCurrentGateway] = useState<string>('stripe');
+  const [currentGateway, setCurrentGateway] = useState<string>('cashfree');
 
-  // Initialize Stripe immediately so buttons are safe to click
+  // Initialize Cashfree payment system
   useEffect(() => {
-    let stripeLoadHandler: (() => void) | null = null;
-    let stripeFailHandler: (() => void) | null = null;
-
-    const initializeStripe = async () => {
-      try {
-        console.log('🔍 Initializing Stripe...');
-
-        // Get publishable key from backend config API
-        let publishableKey = null;
-        try {
-          console.log('🔄 Fetching Stripe config from backend...');
-          const configResponse = await axios.get('/api/config');
-          publishableKey = configResponse.data?.data?.stripe_publishable_key;
-          console.log('✅ Backend config loaded:', publishableKey ? 'Key found' : 'Key not found');
-        } catch (error) {
-          console.warn('⚠️ Could not load Stripe config from backend:', error);
-        }
-
-        if (publishableKey && !publishableKey.includes('your_stripe_public_key')) {
-          console.log('📝 Using publishable key:', publishableKey.substring(0, 12) + '...');
-
-          // Use the official loadStripe function from @stripe/stripe-js
-          console.log('🔄 Loading Stripe.js with loadStripe...');
-          const stripe = await loadStripe(publishableKey);
-          
-          if (stripe) {
-            setStripeInstance(stripe);
-            console.log('✅ Stripe initialized successfully!');
-          } else {
-            throw new Error('Failed to load Stripe.js');
-          }
-
-        } else {
-          console.warn('⚠️ Stripe publishable key not configured properly');
-          console.warn('   Key value:', publishableKey || 'null');
-          console.warn('   Make sure your backend dynamic config has the real Stripe publishable key');
-        }
-
-      } catch (error) {
-        console.error('❌ Failed to initialize Stripe:', error);
-        console.warn('💡 Stripe payment system not available.');
-        console.warn('🔍 Troubleshooting steps:');
-        console.warn('  1. Check if https://js.stripe.com/v3/ is accessible');
-        console.warn('  2. Verify no ad blockers or firewalls are blocking Stripe');
-        console.warn('  3. Check browser console for CSP or network errors');
-        console.warn('  4. Try refreshing the page');
-
-        // Set a flag to show user-friendly error
-        setStripeInstance('error');
-      }
-    };
-
-    // Initialize immediately (no delay) to avoid race condition with button clicks
-    initializeStripe();
-
-    // Cleanup function
-    return () => {
-      if (stripeLoadHandler) {
-        window.removeEventListener('stripe-loaded', stripeLoadHandler);
-      }
-      if (stripeFailHandler) {
-        window.removeEventListener('stripe-load-failed', stripeFailHandler);
-      }
-    };
+    console.log('🔍 Initializing Cashfree payment system...');
+    console.log('✅ Cashfree ready - no client-side initialization required');
   }, []);
   
   // Fetch available payment gateways
@@ -145,8 +79,8 @@ const CreditsPage: React.FC = () => {
         }
       } catch (error) {
         console.error('Failed to fetch payment gateways:', error);
-        // Default to Stripe if gateway fetch fails
-        setAvailableGateways([{ id: 'stripe', name: 'Stripe', active: true, priority: 100, supportedCurrencies: ['USD'], supportedCountries: ['US'] }]);
+        // Default to Cashfree if gateway fetch fails
+        setAvailableGateways([{ id: 'cashfree', name: 'Cashfree', active: true, priority: 100, supportedCurrencies: ['INR', 'USD'], supportedCountries: ['IN'] }]);
       }
     };
 
@@ -225,64 +159,7 @@ const CreditsPage: React.FC = () => {
         const { paymentIntent, package: packageData, gateway } = response.data;
         setCurrentGateway(gateway);
         
-        if (gateway === 'stripe') {
-          // Debug the payment intent structure
-          console.log('🔍 Stripe Payment Intent Details:', {
-            id: paymentIntent.id,
-            clientSecret: paymentIntent.client_secret || paymentIntent.clientSecret,
-            status: paymentIntent.status,
-            hasClientSecret: !!(paymentIntent.client_secret || paymentIntent.clientSecret)
-          });
-          
-          // Validate that we have a client secret for Stripe
-          const clientSecret = paymentIntent.client_secret || paymentIntent.clientSecret;
-          if (!clientSecret) {
-            console.error('❌ Missing client_secret in Stripe payment intent:', paymentIntent);
-            alert(
-              '❌ Payment Setup Error\n\n' +
-              'The payment intent was created but is missing required data.\n' +
-              'This is likely a backend configuration issue.\n\n' +
-              'Please contact support or try again later.'
-            );
-            return;
-          }
-          
-          // Check if Stripe is initialized
-          if (!stripeInstance) {
-            console.error('Stripe.js not initialized');
-            alert(
-              '⚠️ Payment System Not Available\n\n' +
-              'Stripe.js failed to load. This could be due to:\n' +
-              '• Network connectivity issues\n' +
-              '• Firewall or ad blocker restrictions\n' +
-              '• Browser security settings\n\n' +
-              'Please try:\n' +
-              '1. Refreshing the page\n' +
-              '2. Disabling ad blockers temporarily\n' +
-              '3. Checking your internet connection\n\n' +
-              'The backend payment system is working, but we cannot load the payment form.'
-            );
-            return;
-          }
-          
-          if (stripeInstance === 'error') {
-            console.error('Stripe.js in error state');
-            alert(
-              '❌ Payment System Error\n\n' +
-              'The payment system is temporarily unavailable.\n\n' +
-              'This is likely due to network restrictions blocking access to Stripe.\n' +
-              'Please contact support or try again later.'
-            );
-            return;
-          }
-          
-          // Show the Stripe payment form
-          console.log('✅ Stripe payment intent created, showing payment form');
-          setCurrentPaymentIntent({
-            id: paymentIntent.id,
-            clientSecret: clientSecret,
-          });
-        } else if (gateway === 'cashfree') {
+        if (gateway === 'cashfree') {
           // Handle Cashfree order data
           console.log('🔍 Cashfree Order Details:', {
             orderId: paymentIntent.id,
@@ -304,7 +181,7 @@ const CreditsPage: React.FC = () => {
           
           // Show the Cashfree payment form
           console.log('✅ Cashfree order created, showing payment form');
-          setCurrentPaymentIntent({
+          setCurrentOrderData({
             orderId: paymentIntent.id,
             cfOrderId: paymentIntent.id,
             paymentSessionId: paymentIntent.paymentSessionId || '',
@@ -360,7 +237,7 @@ const CreditsPage: React.FC = () => {
   const handlePaymentSuccess = async () => {
     console.log('🎉 Payment completed successfully!');
     setShowPaymentForm(false);
-    setCurrentPaymentIntent(null);
+    setCurrentOrderData(null);
     setCurrentPackage(null);
     
     // Show success message
@@ -382,7 +259,7 @@ const CreditsPage: React.FC = () => {
   const handlePaymentCancel = () => {
     console.log('Payment canceled by user');
     setShowPaymentForm(false);
-    setCurrentPaymentIntent(null);
+    setCurrentOrderData(null);
     setCurrentPackage(null);
   };
 
@@ -395,7 +272,7 @@ const CreditsPage: React.FC = () => {
       <MatrixRain />
 
       {/* Payment Form Modal */}
-      {showPaymentForm && currentPaymentIntent && currentPackage && (
+      {showPaymentForm && currentOrderData && currentPackage && (
         <div className='fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75'>
           <div className='relative mx-4 w-full max-w-md'>
             <button
@@ -405,35 +282,17 @@ const CreditsPage: React.FC = () => {
               <XMarkIcon className='h-6 w-6' />
             </button>
             
-            {currentGateway === 'stripe' && stripeInstance && (
-              <Elements stripe={stripeInstance}>
-                <StripePaymentForm
-                  paymentIntent={currentPaymentIntent}
-                  packageInfo={{
-                    name: currentPackage.name,
-                    credits: currentPackage.credits,
-                    price: currentPackage.price,
-                  }}
-                  onSuccess={handlePaymentSuccess}
-                  onError={handlePaymentError}
-                  onCancel={handlePaymentCancel}
-                />
-              </Elements>
-            )}
-            
-            {currentGateway === 'cashfree' && (
-              <CashfreePaymentForm
-                orderData={currentPaymentIntent}
-                packageInfo={{
-                  name: currentPackage.name,
-                  credits: currentPackage.credits,
-                  price: currentPackage.price,
-                }}
-                onSuccess={handlePaymentSuccess}
-                onError={handlePaymentError}
-                onCancel={handlePaymentCancel}
-              />
-            )}
+            <CashfreePaymentForm
+              orderData={currentOrderData}
+              packageInfo={{
+                name: currentPackage.name,
+                credits: currentPackage.credits,
+                price: currentPackage.price,
+              }}
+              onSuccess={handlePaymentSuccess}
+              onError={handlePaymentError}
+              onCancel={handlePaymentCancel}
+            />
           </div>
         </div>
       )}
@@ -597,16 +456,14 @@ const CreditsPage: React.FC = () => {
 
                   <CliButton
                     onClick={() => handlePurchase(pkg.id)}
-                    disabled={(loading && selectedPackage === pkg.id) || !stripeInstance || stripeInstance === 'error'}
+                    disabled={loading && selectedPackage === pkg.id}
                     variant={pkg.popular ? 'primary' : 'secondary'}
                     className='w-full'
                     isLoading={loading && selectedPackage === pkg.id}
                   >
-                    {(!stripeInstance || stripeInstance === 'error')
-                      ? './loading-stripe...'
-                      : (loading && selectedPackage === pkg.id
-                        ? './processing-payment...'
-                        : `./purchase ${pkg.name.toLowerCase().replace(' ', '-')}`)}
+                    {loading && selectedPackage === pkg.id
+                      ? './processing-payment...'
+                      : `./purchase ${pkg.name.toLowerCase().replace(' ', '-')}`}
                   </CliButton>
                 </div>
               </CliCard>

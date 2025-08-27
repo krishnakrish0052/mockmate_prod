@@ -8,6 +8,7 @@ import { logError, logSessionEvent } from '../config/logger.js';
 import PDFDocument from 'pdfkit';
 import fs from 'fs';
 import path from 'path';
+import backgroundTimerService from '../services/BackgroundTimerService.js';
 
 // Get database pool instance
 let pool = null;
@@ -2580,6 +2581,87 @@ router.post(
   }
 );
 
+// Update session timer - called by frontend
+router.post(
+  '/:sessionId/update_session_timer',
+  authenticateToken,
+  [param('sessionId').isUUID()],
+  async (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          error: 'Validation failed',
+          code: 'VALIDATION_ERROR',
+          details: errors.array(),
+        });
+      }
+
+      const { sessionId } = req.params;
+      const { elapsedMinutes, isFinal = false } = req.body;
+
+      // Validate session belongs to user
+      const pool = getPool();
+      const sessionQuery = 'SELECT id, status FROM sessions WHERE id = $1 AND user_id = $2';
+      const sessionResult = await pool.query(sessionQuery, [sessionId, req.user.id]);
+
+      if (sessionResult.rows.length === 0) {
+        return res.status(404).json({
+          error: 'Session not found',
+          code: 'SESSION_NOT_FOUND',
+        });
+      }
+
+      const session = sessionResult.rows[0];
+
+      // Only update timer for active sessions or allow final updates
+      if (session.status !== 'active' && !isFinal) {
+        return res.status(400).json({
+          error: 'Can only update timer for active sessions',
+          code: 'INVALID_SESSION_STATUS',
+          currentStatus: session.status,
+        });
+      }
+
+      // Update session timer
+      await pool.query(
+        `
+        UPDATE sessions 
+        SET total_duration_minutes = $1, updated_at = NOW()
+        WHERE id = $2
+      `,
+        [elapsedMinutes || 0, sessionId]
+      );
+
+      // Log timer update if it's a final update
+      if (isFinal) {
+        logSessionEvent('SESSION_TIMER_FINAL_UPDATE', sessionId, req.user.id, {
+          elapsedMinutes: elapsedMinutes || 0,
+          sessionStatus: session.status,
+        });
+      }
+
+      res.json({
+        success: true,
+        message: isFinal ? 'Final timer update recorded' : 'Timer updated successfully',
+        elapsedMinutes: elapsedMinutes || 0,
+        sessionId: sessionId,
+        timestamp: new Date(),
+      });
+    } catch (error) {
+      logError(error, {
+        endpoint: 'sessions/update_session_timer',
+        userId: req.user?.id,
+        sessionId: req.params.sessionId,
+      });
+      res.status(500).json({
+        error: 'Failed to update session timer',
+        code: 'TIMER_UPDATE_ERROR',
+      });
+    }
+  }
+);
+
 // Desktop heartbeat endpoint
 router.post(
   '/:sessionId/heartbeat',
@@ -3217,6 +3299,269 @@ router.post(
       res.status(500).json({
         error: 'Failed to stop session',
         code: 'SESSION_STOP_ERROR',
+      });
+    }
+  }
+);
+
+// Get session timer status
+router.get('/:sessionId/timer', 
+  authenticateToken,
+  [param('sessionId').isUUID()],
+  async (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          error: 'Validation failed',
+          code: 'VALIDATION_ERROR',
+          details: errors.array()
+        });
+      }
+
+      const { sessionId } = req.params;
+
+      // Get session from database
+      const pool = getPool();
+      const sessionQuery = `
+        SELECT id, status, started_at, ended_at, paused_at, 
+               total_paused_duration_seconds, estimated_duration_minutes
+        FROM sessions 
+        WHERE id = $1 AND user_id = $2
+      `;
+      const sessionResult = await pool.query(sessionQuery, [sessionId, req.user.id]);
+
+      if (sessionResult.rows.length === 0) {
+        return res.status(404).json({
+          error: 'Session not found',
+          code: 'SESSION_NOT_FOUND'
+        });
+      }
+
+      const session = sessionResult.rows[0];
+      
+      let elapsedSeconds = 0;
+      let remainingSeconds = null;
+      let isRunning = false;
+      let isPaused = false;
+
+      if (session.status === 'active') {
+        if (session.paused_at) {
+          // Session is paused
+          isPaused = true;
+          const pausedAt = new Date(session.paused_at);
+          const startedAt = new Date(session.started_at);
+          elapsedSeconds = Math.floor((pausedAt - startedAt) / 1000);
+          if (session.total_paused_duration_seconds) {
+            elapsedSeconds -= session.total_paused_duration_seconds;
+          }
+        } else {
+          // Session is running
+          isRunning = true;
+          const now = new Date();
+          const startedAt = new Date(session.started_at);
+          elapsedSeconds = Math.floor((now - startedAt) / 1000);
+          if (session.total_paused_duration_seconds) {
+            elapsedSeconds -= session.total_paused_duration_seconds;
+          }
+        }
+      } else if (session.status === 'completed' && session.started_at && session.ended_at) {
+        // Session is completed
+        const endedAt = new Date(session.ended_at);
+        const startedAt = new Date(session.started_at);
+        elapsedSeconds = Math.floor((endedAt - startedAt) / 1000);
+        if (session.total_paused_duration_seconds) {
+          elapsedSeconds -= session.total_paused_duration_seconds;
+        }
+      }
+
+      // Calculate remaining time if there's a duration limit
+      if (session.estimated_duration_minutes) {
+        const totalAllowedSeconds = session.estimated_duration_minutes * 60;
+        remainingSeconds = Math.max(0, totalAllowedSeconds - elapsedSeconds);
+      }
+
+      res.json({
+        sessionId: session.id,
+        status: session.status,
+        isRunning,
+        isPaused,
+        elapsedSeconds: Math.max(0, elapsedSeconds),
+        remainingSeconds,
+        estimatedDurationMinutes: session.estimated_duration_minutes,
+        startedAt: session.started_at,
+        endedAt: session.ended_at,
+        pausedAt: session.paused_at
+      });
+
+    } catch (error) {
+      logError(error, { endpoint: 'sessions/timer', userId: req.user?.id, sessionId: req.params.sessionId });
+      res.status(500).json({
+        error: 'Failed to get timer status',
+        code: 'TIMER_GET_ERROR'
+      });
+    }
+  }
+);
+
+// Pause session timer
+router.post('/:sessionId/timer/pause', 
+  authenticateToken,
+  [param('sessionId').isUUID()],
+  async (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          error: 'Validation failed',
+          code: 'VALIDATION_ERROR',
+          details: errors.array()
+        });
+      }
+
+      const { sessionId } = req.params;
+
+      // Get session from database
+      const pool = getPool();
+      const sessionQuery = `
+        SELECT id, status, started_at, paused_at
+        FROM sessions 
+        WHERE id = $1 AND user_id = $2
+      `;
+      const sessionResult = await pool.query(sessionQuery, [sessionId, req.user.id]);
+
+      if (sessionResult.rows.length === 0) {
+        return res.status(404).json({
+          error: 'Session not found',
+          code: 'SESSION_NOT_FOUND'
+        });
+      }
+
+      const session = sessionResult.rows[0];
+
+      if (session.status !== 'active') {
+        return res.status(400).json({
+          error: 'Can only pause active sessions',
+          code: 'INVALID_SESSION_STATUS'
+        });
+      }
+
+      if (session.paused_at) {
+        return res.status(400).json({
+          error: 'Session is already paused',
+          code: 'ALREADY_PAUSED'
+        });
+      }
+
+      // Update session to paused state
+      await pool.query(`
+        UPDATE sessions 
+        SET paused_at = CURRENT_TIMESTAMP
+        WHERE id = $1
+      `, [sessionId]);
+
+      logSessionEvent('SESSION_PAUSED', sessionId, req.user.id, {
+        pausedAt: new Date()
+      });
+
+      res.json({
+        message: 'Session paused successfully',
+        sessionId,
+        pausedAt: new Date()
+      });
+
+    } catch (error) {
+      logError(error, { endpoint: 'sessions/timer/pause', userId: req.user?.id, sessionId: req.params.sessionId });
+      res.status(500).json({
+        error: 'Failed to pause session',
+        code: 'TIMER_PAUSE_ERROR'
+      });
+    }
+  }
+);
+
+// Resume session timer
+router.post('/:sessionId/timer/resume', 
+  authenticateToken,
+  [param('sessionId').isUUID()],
+  async (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          error: 'Validation failed',
+          code: 'VALIDATION_ERROR',
+          details: errors.array()
+        });
+      }
+
+      const { sessionId } = req.params;
+
+      // Get session from database
+      const pool = getPool();
+      const sessionQuery = `
+        SELECT id, status, started_at, paused_at, total_paused_duration_seconds
+        FROM sessions 
+        WHERE id = $1 AND user_id = $2
+      `;
+      const sessionResult = await pool.query(sessionQuery, [sessionId, req.user.id]);
+
+      if (sessionResult.rows.length === 0) {
+        return res.status(404).json({
+          error: 'Session not found',
+          code: 'SESSION_NOT_FOUND'
+        });
+      }
+
+      const session = sessionResult.rows[0];
+
+      if (session.status !== 'active') {
+        return res.status(400).json({
+          error: 'Can only resume active sessions',
+          code: 'INVALID_SESSION_STATUS'
+        });
+      }
+
+      if (!session.paused_at) {
+        return res.status(400).json({
+          error: 'Session is not paused',
+          code: 'NOT_PAUSED'
+        });
+      }
+
+      // Calculate paused duration
+      const now = new Date();
+      const pausedAt = new Date(session.paused_at);
+      const pausedDurationSeconds = Math.floor((now - pausedAt) / 1000);
+      const totalPausedDuration = (session.total_paused_duration_seconds || 0) + pausedDurationSeconds;
+
+      // Update session to resume state
+      await pool.query(`
+        UPDATE sessions 
+        SET paused_at = NULL, 
+            total_paused_duration_seconds = $1
+        WHERE id = $2
+      `, [totalPausedDuration, sessionId]);
+
+      logSessionEvent('SESSION_RESUMED', sessionId, req.user.id, {
+        resumedAt: now,
+        pausedDurationSeconds,
+        totalPausedDurationSeconds: totalPausedDuration
+      });
+
+      res.json({
+        message: 'Session resumed successfully',
+        sessionId,
+        resumedAt: now,
+        pausedDurationSeconds,
+        totalPausedDurationSeconds: totalPausedDuration
+      });
+
+    } catch (error) {
+      logError(error, { endpoint: 'sessions/timer/resume', userId: req.user?.id, sessionId: req.params.sessionId });
+      res.status(500).json({
+        error: 'Failed to resume session',
+        code: 'TIMER_RESUME_ERROR'
       });
     }
   }

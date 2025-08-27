@@ -23,6 +23,7 @@ import {
   CliBadge,
 } from '../ui/CliComponents';
 import { launchWithAutoFeatures } from '../../utils/desktopLauncher';
+import SessionTimer from '../../../components/SessionTimer';
 
 interface SessionData {
   id: string;
@@ -490,6 +491,25 @@ const SessionView: React.FC = () => {
                       {session.jobDescription.substring(0, 200)}
                       {session.jobDescription.length > 200 ? '...' : ''}
                     </p>
+                  </div>
+                )}
+
+                {/* Session Timer - Show for active and completed sessions */}
+                {(session.status === 'active' || session.status === 'completed') && (
+                  <div className='mt-4'>
+                    <div className='mb-2 font-mono text-xs text-cli-light-gray'>
+                      $ session-timer --realtime
+                    </div>
+                    <SessionTimer 
+                      sessionId={session.id}
+                      onTimerStop={(duration) => {
+                        console.log(`Timer stopped after ${duration} minutes`);
+                        // Optionally refresh session data
+                        fetchSession();
+                      }}
+                      size='md'
+                      className='border-primary-500/30 bg-primary-900/10'
+                    />
                   </div>
                 )}
               </div>

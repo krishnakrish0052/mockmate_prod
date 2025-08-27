@@ -1,5 +1,4 @@
 import express from 'express';
-import Stripe from 'stripe';
 import { v4 as uuidv4 } from 'uuid';
 import { body, param, validationResult } from 'express-validator';
 import { getDatabase } from '../config/database.js';
@@ -8,9 +7,6 @@ import { authenticateToken, userRateLimit } from '../middleware/auth.js';
 import { logError, logPaymentEvent } from '../config/logger.js';
 import { paymentService } from '../services/PaymentService.js';
 import { cashfreeService } from '../services/CashfreeService.js';
-
-// Stripe will be initialized lazily after we resolve credentials from dynamic config or env
-let stripe = null;
 
 // Get database pool instance
 let pool = null;
@@ -22,30 +18,6 @@ const getPool = () => {
 };
 
 const router = express.Router();
-
-// Resolve Stripe credentials from dynamic config (preferred) with env fallback
-async function getStripeClient(req) {
-  if (stripe) return stripe;
-
-  try {
-    const dynamicConfig = req.app?.locals?.dynamicConfig;
-
-    // Try dynamic config first
-    const secretFromConfig = dynamicConfig ? await dynamicConfig.get('stripe_secret_key', null) : null;
-    const secret = secretFromConfig || process.env.STRIPE_SECRET_KEY;
-
-    if (!secret || /your_stripe_secret_key/i.test(secret)) {
-      throw new Error('Stripe secret key is not configured. Please set via Admin > Configuration > Payment or .env');
-    }
-
-    stripe = new Stripe(secret);
-    return stripe;
-  } catch (err) {
-    // Log and rethrow for handler to present a proper 500 with guidance
-    logError(err, { component: 'payments', where: 'getStripeClient' });
-    throw err;
-  }
-}
 
 // Helper function to get active credit packages from database
 async function getActiveCreditPackages() {
@@ -100,23 +72,20 @@ async function getActiveSubscriptionPlans() {
 
 // Helper function to identify payment gateway from payment record
 function identifyPaymentGateway(paymentRecord) {
-  if (paymentRecord.stripe_payment_intent_id) {
-    return { gateway: 'stripe', id: paymentRecord.stripe_payment_intent_id };
-  }
   if (paymentRecord.cashfree_order_id) {
     return { gateway: 'cashfree', id: paymentRecord.cashfree_order_id };
   }
   return { gateway: 'unknown', id: null };
 }
 
-// Helper function to get payment record by various gateway IDs
+// Helper function to get payment record by Cashfree order ID
 async function getPaymentRecordByGatewayId(gatewayId, userId) {
   const pool = getPool();
   
-  // Try to find payment by any gateway ID
+  // Try to find payment by Cashfree order ID
   const paymentQuery = `
     SELECT * FROM payments 
-    WHERE (stripe_payment_intent_id = $1 OR cashfree_order_id = $1) 
+    WHERE cashfree_order_id = $1 
     AND user_id = $2
   `;
   
@@ -136,55 +105,37 @@ async function getPaymentRecordByGatewayId(gatewayId, userId) {
   };
 }
 
-// Helper function to confirm payment with appropriate gateway
+// Helper function to confirm payment with Cashfree gateway
 async function confirmPaymentWithGateway(paymentRecord, req) {
   const gatewayInfo = identifyPaymentGateway(paymentRecord);
   
-  switch (gatewayInfo.gateway) {
-    case 'stripe': {
-      const stripeClient = await getStripeClient(req);
-      return await stripeClient.paymentIntents.confirm(gatewayInfo.id);
+  if (gatewayInfo.gateway === 'cashfree') {
+    await paymentService.initializeProviders();
+    const activeProviders = paymentService.getActiveProviders();
+    const cashfreeProvider = activeProviders.find(p => p.type === 'cashfree');
+    
+    if (!cashfreeProvider) {
+      throw new Error('Cashfree gateway not available');
     }
-    case 'cashfree': {
-      await paymentService.initializeProviders();
-      const activeProviders = paymentService.getActiveProviders();
-      const cashfreeProvider = activeProviders.find(p => p.type === 'cashfree');
-      
-      if (!cashfreeProvider) {
-        throw new Error('Cashfree gateway not available');
-      }
-      
-      const orderStatus = await paymentService.confirmPayment(
-        gatewayInfo.id, 
-        null, 
-        cashfreeProvider.configId
-      );
-      return orderStatus.data;
-    }
-    default:
-      throw new Error(`Unsupported payment gateway: ${gatewayInfo.gateway}`);
+    
+    const orderStatus = await paymentService.confirmPayment(
+      gatewayInfo.id, 
+      null, 
+      cashfreeProvider.configId
+    );
+    return orderStatus.data;
   }
+  
+  throw new Error(`Unsupported payment gateway: ${gatewayInfo.gateway}`);
 }
 
 // Validation rules
 const createPaymentIntentValidation = [
   body('packageId').notEmpty().withMessage('Package ID is required'),
-  body('paymentMethodId').optional().isString().withMessage('Payment method ID must be a string'),
-  body('gateway').optional().isIn(['stripe', 'cashfree']).withMessage('Invalid payment gateway'),
 ];
 
 const confirmPaymentValidation = [
   body('paymentIntentId').isString().withMessage('Payment intent ID is required'),
-];
-
-const webhookValidation = [
-  body().custom((value, { req }) => {
-    const sig = req.headers['stripe-signature'];
-    if (!sig) {
-      throw new Error('Missing stripe signature');
-    }
-    return true;
-  }),
 ];
 
 // Get available credit packages
@@ -291,7 +242,7 @@ router.post(
         });
       }
 
-      const { packageId, paymentMethodId, gateway = 'stripe' } = req.body;
+      const { packageId } = req.body;
       const CREDIT_PACKAGES = await getActiveCreditPackages();
       const creditPackage = CREDIT_PACKAGES[packageId];
 
@@ -303,109 +254,63 @@ router.post(
       }
 
       let paymentIntent;
-      let paymentProvider = 'stripe'; // Default to Stripe for backward compatibility
+      const paymentProvider = 'cashfree';
       const pool = getPool();
       const paymentId = uuidv4();
-
-      if (gateway === 'cashfree') {
-        // Create Cashfree order
-        try {
-          await paymentService.initializeProviders();
-          const activeProviders = paymentService.getActiveProviders();
-          const cashfreeProvider = activeProviders.find(p => p.type === 'cashfree');
-          
-          if (!cashfreeProvider) {
-            throw new Error('Cashfree gateway not available or not configured');
-          }
-
-          const metadata = {
-            userId: req.user.id.toString(),
-            packageId,
-            credits: creditPackage.credits.toString(),
-            customerName: req.user.name || 'Customer',
-            customerEmail: req.user.email,
-            customerPhone: req.user.phone || '',
-            description: `${creditPackage.name} - ${creditPackage.credits} credits`,
-            returnUrl: `${process.env.FRONTEND_URL}/payment/success`,
-            notifyUrl: `${process.env.BACKEND_URL || 'http://localhost:5000'}/api/payments/cashfree/webhook`,
-          };
-
-          // Convert price from USD cents to INR (approximate conversion)
-          const amountInINR = Math.round((creditPackage.price / 100) * 83); // 1 USD ≈ 83 INR
-
-          const cashfreeOrder = await paymentService.createPaymentIntent(
-            amountInINR,
-            'INR',
-            metadata,
-            req.user.id
-          );
-
-          paymentIntent = cashfreeOrder.data;
-          paymentProvider = 'cashfree';
-
-          // Store payment record for Cashfree
-          await pool.query(
-            `
-            INSERT INTO payments (
-              id, user_id, cashfree_order_id, package_id, 
-              credits, amount, status, payment_provider, created_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, 'pending', 'cashfree', CURRENT_TIMESTAMP)
-          `,
-            [
-              paymentId,
-              req.user.id,
-              paymentIntent.orderId,
-              packageId,
-              creditPackage.credits,
-              creditPackage.price, // Store original USD price
-            ]
-          );
-
-        } catch (error) {
-          throw new Error(`Cashfree payment creation failed: ${error.message}`);
+      // Create Cashfree order
+      try {
+        await paymentService.initializeProviders();
+        const activeProviders = paymentService.getActiveProviders();
+        const cashfreeProvider = activeProviders.find(p => p.type === 'cashfree');
+        
+        if (!cashfreeProvider) {
+          throw new Error('Cashfree gateway not available or not configured');
         }
-      } else {
-        // Use Stripe (existing implementation)
-        const stripeClient = await getStripeClient(req);
 
-        const paymentIntentData = {
-          amount: creditPackage.price,
-          currency: 'usd',
-          metadata: {
-            userId: req.user.id.toString(),
-            packageId,
-            credits: creditPackage.credits.toString(),
-          },
+        const metadata = {
+          userId: req.user.id.toString(),
+          packageId,
+          credits: creditPackage.credits.toString(),
+          customerName: req.user.name || 'Customer',
+          customerEmail: req.user.email,
+          customerPhone: req.user.phone || '',
           description: `${creditPackage.name} - ${creditPackage.credits} credits`,
-          receipt_email: req.user.email,
+          returnUrl: `${process.env.FRONTEND_URL}/payment/success`,
+          notifyUrl: `${process.env.BACKEND_URL || 'http://localhost:5000'}/api/payments/cashfree/webhook`,
         };
 
-        if (paymentMethodId) {
-          paymentIntentData.payment_method = paymentMethodId;
-          paymentIntentData.confirmation_method = 'manual';
-          paymentIntentData.confirm = true;
-          paymentIntentData.return_url = `${process.env.FRONTEND_URL}/payment/success`;
-        }
+        // Convert price from USD cents to INR (approximate conversion)
+        const amountInINR = Math.round((creditPackage.price / 100) * 83); // 1 USD ≈ 83 INR
 
-        paymentIntent = await stripeClient.paymentIntents.create(paymentIntentData);
+        const cashfreeOrder = await paymentService.createPaymentIntent(
+          amountInINR,
+          'INR',
+          metadata,
+          req.user.id
+        );
 
-        // Store payment record for Stripe
+        paymentIntent = cashfreeOrder.data;
+
+        // Store payment record for Cashfree
         await pool.query(
           `
           INSERT INTO payments (
-            id, user_id, stripe_payment_intent_id, package_id, 
+            id, user_id, cashfree_order_id, package_id, 
             credits, amount, status, payment_provider, created_at
-          ) VALUES ($1, $2, $3, $4, $5, $6, 'pending', 'stripe', CURRENT_TIMESTAMP)
+          ) VALUES ($1, $2, $3, $4, $5, $6, 'pending', 'cashfree', CURRENT_TIMESTAMP)
         `,
           [
             paymentId,
             req.user.id,
-            paymentIntent.id,
+            paymentIntent.orderId,
             packageId,
             creditPackage.credits,
-            creditPackage.price,
+            creditPackage.price, // Store original USD price
           ]
         );
+
+      } catch (error) {
+        throw new Error(`Cashfree payment creation failed: ${error.message}`);
       }
 
       logPaymentEvent('PAYMENT_INTENT_CREATED', req.user.id, creditPackage.price, {
@@ -431,19 +336,11 @@ router.post(
       });
     } catch (error) {
       logError(error, { endpoint: 'payments/create-payment-intent', userId: req.user?.id });
-
-      if (error.type === 'StripeCardError') {
-        res.status(400).json({
-          error: error.message,
-          code: 'CARD_ERROR',
-        });
-      } else {
-        res.status(500).json({
-          error: 'Failed to create payment intent',
-          code: 'PAYMENT_INTENT_ERROR',
-          message: error.message,
-        });
-      }
+      res.status(500).json({
+        error: 'Failed to create payment intent',
+        code: 'PAYMENT_INTENT_ERROR',
+        message: error.message,
+      });
     }
   }
 );
@@ -491,19 +388,11 @@ router.post('/confirm-payment', authenticateToken, confirmPaymentValidation, asy
     });
   } catch (error) {
     logError(error, { endpoint: 'payments/confirm-payment', userId: req.user?.id });
-
-    if (error.type === 'StripeCardError') {
-      res.status(400).json({
-        error: error.message,
-        code: 'CARD_ERROR',
-      });
-    } else {
-      res.status(500).json({
-        error: 'Failed to confirm payment',
-        code: 'PAYMENT_CONFIRMATION_ERROR',
-        message: error.message,
-      });
-    }
+    res.status(500).json({
+      error: 'Failed to confirm payment',
+      code: 'PAYMENT_CONFIRMATION_ERROR',
+      message: error.message,
+    });
   }
 });
 
@@ -617,39 +506,24 @@ router.get('/:paymentId', authenticateToken, [param('paymentId').isUUID()], asyn
     let gatewayStatus = null;
 
     try {
-      switch (gatewayInfo.gateway) {
-        case 'stripe': {
-          const stripeClient = await getStripeClient(req);
-          const paymentIntent = await stripeClient.paymentIntents.retrieve(gatewayInfo.id);
+      if (gatewayInfo.gateway === 'cashfree') {
+        await paymentService.initializeProviders();
+        const activeProviders = paymentService.getActiveProviders();
+        const cashfreeProvider = activeProviders.find(p => p.type === 'cashfree');
+        
+        if (cashfreeProvider) {
+          const orderStatus = await paymentService.confirmPayment(
+            gatewayInfo.id, 
+            null, 
+            cashfreeProvider.configId
+          );
           gatewayDetails = {
-            paymentMethodTypes: paymentIntent.payment_method_types,
-            clientSecret: paymentIntent.client_secret,
-            lastPaymentError: paymentIntent.last_payment_error,
-            receiptEmail: paymentIntent.receipt_email,
+            orderStatus: orderStatus.data.order_status,
+            paymentMethod: orderStatus.data.payment_method,
+            orderAmount: orderStatus.data.order_amount,
+            orderCurrency: orderStatus.data.order_currency,
           };
-          gatewayStatus = paymentIntent.status;
-          break;
-        }
-        case 'cashfree': {
-          await paymentService.initializeProviders();
-          const activeProviders = paymentService.getActiveProviders();
-          const cashfreeProvider = activeProviders.find(p => p.type === 'cashfree');
-          
-          if (cashfreeProvider) {
-            const orderStatus = await paymentService.confirmPayment(
-              gatewayInfo.id, 
-              null, 
-              cashfreeProvider.configId
-            );
-            gatewayDetails = {
-              orderStatus: orderStatus.data.order_status,
-              paymentMethod: orderStatus.data.payment_method,
-              orderAmount: orderStatus.data.order_amount,
-              orderCurrency: orderStatus.data.order_currency,
-            };
-            gatewayStatus = orderStatus.data.order_status;
-          }
-          break;
+          gatewayStatus = orderStatus.data.order_status;
         }
       }
     } catch (gatewayError) {
@@ -728,70 +602,43 @@ router.post('/process-payment-success', authenticateToken, async (req, res) => {
     
     let verificationResult = null;
     
-    // Verify payment status with appropriate gateway
-    switch (payment.gateway) {
-      case 'stripe': {
-        const stripeClient = await getStripeClient(req);
-        const paymentIntent = await stripeClient.paymentIntents.retrieve(paymentIntentId);
-        
-        if (paymentIntent.status !== 'succeeded') {
-          console.warn(`⚠️ Stripe payment intent ${paymentIntentId} status is ${paymentIntent.status}, not succeeded`);
-          return res.status(400).json({
-            error: 'Payment not yet succeeded',
-            code: 'PAYMENT_NOT_SUCCEEDED',
-            status: paymentIntent.status
-          });
-        }
-        
-        verificationResult = {
-          id: paymentIntent.id,
-          amount: paymentIntent.amount,
-          metadata: {
-            userId: req.user.id.toString(),
-            packageId: payment.package_id,
-            credits: payment.credits.toString()
-          }
-        };
-        break;
+    // Verify payment status with Cashfree gateway
+    if (payment.gateway === 'cashfree') {
+      // Get order status from Cashfree
+      await paymentService.initializeProviders();
+      const activeProviders = paymentService.getActiveProviders();
+      const cashfreeProvider = activeProviders.find(p => p.type === 'cashfree');
+      
+      if (!cashfreeProvider) {
+        throw new Error('Cashfree gateway not available');
       }
-      case 'cashfree': {
-        // Get order status from Cashfree
-        await paymentService.initializeProviders();
-        const activeProviders = paymentService.getActiveProviders();
-        const cashfreeProvider = activeProviders.find(p => p.type === 'cashfree');
-        
-        if (!cashfreeProvider) {
-          throw new Error('Cashfree gateway not available');
-        }
-        
-        const orderStatus = await paymentService.confirmPayment(
-          paymentIntentId, 
-          null, 
-          cashfreeProvider.configId
-        );
-        
-        if (orderStatus.data.order_status !== 'PAID') {
-          console.warn(`⚠️ Cashfree order ${paymentIntentId} status is ${orderStatus.data.order_status}, not PAID`);
-          return res.status(400).json({
-            error: 'Payment not yet completed',
-            code: 'PAYMENT_NOT_COMPLETED',
-            status: orderStatus.data.order_status
-          });
-        }
-        
-        verificationResult = {
-          id: paymentIntentId,
-          amount: payment.amount,
-          metadata: {
-            userId: req.user.id.toString(),
-            packageId: payment.package_id,
-            credits: payment.credits.toString()
-          }
-        };
-        break;
+      
+      const orderStatus = await paymentService.confirmPayment(
+        paymentIntentId, 
+        null, 
+        cashfreeProvider.configId
+      );
+      
+      if (orderStatus.data.order_status !== 'PAID') {
+        console.warn(`⚠️ Cashfree order ${paymentIntentId} status is ${orderStatus.data.order_status}, not PAID`);
+        return res.status(400).json({
+          error: 'Payment not yet completed',
+          code: 'PAYMENT_NOT_COMPLETED',
+          status: orderStatus.data.order_status
+        });
       }
-      default:
-        throw new Error(`Unsupported payment gateway: ${payment.gateway}`);
+      
+      verificationResult = {
+        id: paymentIntentId,
+        amount: payment.amount,
+        metadata: {
+          userId: req.user.id.toString(),
+          packageId: payment.package_id,
+          credits: payment.credits.toString()
+        }
+      };
+    } else {
+      throw new Error(`Unsupported payment gateway: ${payment.gateway}`);
     }
     
     // Use the existing payment success handler
@@ -823,52 +670,6 @@ router.post('/process-payment-success', authenticateToken, async (req, res) => {
   }
 });
 
-// Stripe webhook handler
-router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
-  let event;
-  const sig = req.headers['stripe-signature'];
-
-  try {
-    // Get webhook secret from dynamic config or env
-    const dynamicConfig = req.app?.locals?.dynamicConfig;
-    const webhookSecret = dynamicConfig ? await dynamicConfig.get('stripe_webhook_secret', null) : null;
-    const secret = webhookSecret || process.env.STRIPE_WEBHOOK_SECRET;
-    
-    if (!secret || /your_webhook_secret/i.test(secret)) {
-      throw new Error('Stripe webhook secret is not configured');
-    }
-    
-    const stripeClient = await getStripeClient(req);
-    event = stripeClient.webhooks.constructEvent(req.body, sig, secret);
-  } catch (err) {
-    logError(err, { endpoint: 'payments/webhook' });
-    return res.status(400).send(`Webhook signature verification failed: ${err.message}`);
-  }
-
-  try {
-    switch (event.type) {
-      case 'payment_intent.succeeded':
-        await handlePaymentSuccess(event.data.object);
-        break;
-
-      case 'payment_intent.payment_failed':
-        await handlePaymentFailed(event.data.object);
-        break;
-
-      case 'payment_intent.canceled':
-        await handlePaymentCanceled(event.data.object);
-        break;
-
-      default:
-        console.log(`Unhandled event type: ${event.type}`);
-    }
-
-    res.json({ received: true });
-  } catch (error) {
-    logError(error, { endpoint: 'payments/webhook', eventType: event.type });
-    res.status(500).json({ error: 'Webhook handler failed' });
-  }
-});
 
 // Helper function to handle successful payments (gateway-agnostic)
 async function handlePaymentSuccess(paymentIntent) {
@@ -894,13 +695,13 @@ async function handlePaymentSuccess(paymentIntent) {
   await pool.query('BEGIN');
 
   try {
-    // Update payment status - check both stripe and cashfree IDs
+    // Update payment status - check cashfree ID
     console.log('📝 Updating payment status to completed...');
     const paymentUpdateResult = await pool.query(
       `
       UPDATE payments 
       SET status = 'completed', updated_at = CURRENT_TIMESTAMP
-      WHERE (stripe_payment_intent_id = $1 OR cashfree_order_id = $1)
+      WHERE cashfree_order_id = $1
       RETURNING id, user_id, credits, payment_provider
     `,
       [paymentIntent.id]
@@ -933,9 +734,7 @@ async function handlePaymentSuccess(paymentIntent) {
 
     // Record credit transaction
     console.log('📊 Recording credit transaction...');
-    const description = paymentRecord.payment_provider === 'cashfree'
-      ? `Credit purchase via Cashfree - Package ${packageId}`
-      : `Credit purchase via Stripe - Package ${packageId}`;
+    const description = `Credit purchase via Cashfree - Package ${packageId}`;
       
     const transactionResult = await pool.query(
       `
@@ -956,9 +755,7 @@ async function handlePaymentSuccess(paymentIntent) {
     await pool.query('COMMIT');
     console.log('✅ Transaction committed successfully');
 
-    const eventName = paymentRecord.payment_provider === 'cashfree' 
-      ? 'CASHFREE_PAYMENT_COMPLETED' 
-      : 'STRIPE_PAYMENT_COMPLETED';
+    const eventName = 'CASHFREE_PAYMENT_COMPLETED';
       
     logPaymentEvent(eventName, userId, paymentIntent.amount, {
       paymentIntentId: paymentIntent.id,
@@ -988,48 +785,6 @@ async function handlePaymentSuccess(paymentIntent) {
   }
 }
 
-// Helper function to handle failed payments
-async function handlePaymentFailed(paymentIntent) {
-  const pool = getPool();
-  try {
-    await pool.query(
-      `
-      UPDATE payments 
-      SET status = 'failed', updated_at = CURRENT_TIMESTAMP
-      WHERE stripe_payment_intent_id = $1
-    `,
-      [paymentIntent.id]
-    );
-
-    logPaymentEvent('PAYMENT_FAILED', paymentIntent.metadata.userId, paymentIntent.amount, {
-      paymentIntentId: paymentIntent.id,
-      reason: paymentIntent.last_payment_error?.message || 'Unknown error',
-    });
-  } catch (error) {
-    logError(error, { context: 'handlePaymentFailed', paymentIntentId: paymentIntent.id });
-  }
-}
-
-// Helper function to handle canceled payments
-async function handlePaymentCanceled(paymentIntent) {
-  const pool = getPool();
-  try {
-    await pool.query(
-      `
-      UPDATE payments 
-      SET status = 'canceled', updated_at = CURRENT_TIMESTAMP
-      WHERE stripe_payment_intent_id = $1
-    `,
-      [paymentIntent.id]
-    );
-
-    logPaymentEvent('PAYMENT_CANCELED', paymentIntent.metadata.userId, paymentIntent.amount, {
-      paymentIntentId: paymentIntent.id,
-    });
-  } catch (error) {
-    logError(error, { context: 'handlePaymentCanceled', paymentIntentId: paymentIntent.id });
-  }
-}
 
 // Get Cashfree order status
 router.get('/cashfree/status/:orderId', authenticateToken, async (req, res) => {

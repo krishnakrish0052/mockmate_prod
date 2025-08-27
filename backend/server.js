@@ -81,6 +81,9 @@ import AnalyticsService from './services/AnalyticsService.js';
 import { createAnalyticsMiddleware } from './middleware/analyticsMiddleware.js';
 import { createAnalyticsRoutes } from './routes/analyticsRoutes.js';
 
+// Import background timer service
+import backgroundTimerService from './services/BackgroundTimerService.js';
+
 // Import middleware
 import { authenticateToken } from './middleware/auth.js';
 
@@ -978,6 +981,13 @@ async function startServer() {
     logger.info('Alert service initialized successfully');
     console.log('✅ Alert service initialization complete');
 
+    // Initialize background timer service
+    console.log('🕒 Initializing background timer service...');
+    await backgroundTimerService.initialize();
+    app.locals.backgroundTimerService = backgroundTimerService;
+    logger.info('Background timer service initialized successfully');
+    console.log('✅ Background timer service initialization complete');
+
     // Initialize payment services
     try {
       const paymentService = new PaymentService();
@@ -1029,6 +1039,11 @@ async function gracefulShutdown(signal) {
 
   server.close(async () => {
     logger.info('HTTP server closed');
+
+    // Shutdown background timer service
+    if (backgroundTimerService) {
+      await backgroundTimerService.shutdown();
+    }
 
     // Close database connections
     // db.close() - implement based on your database client
