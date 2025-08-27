@@ -32,17 +32,17 @@ class CashfreeService {
   }
 
   // Generate Cashfree authentication headers
-  generateAuthHeaders() {
+  generateAuthHeaders(useOneClickCheckout = false) {
     return {
       'x-client-id': this.appId,
       'x-client-secret': this.secretKey,
-      'x-api-version': '2023-08-01',
+      'x-api-version': useOneClickCheckout ? '2022-09-01' : '2023-08-01',
       'Content-Type': 'application/json',
       'Accept': 'application/json'
     };
   }
 
-  // Create payment order using One Click Checkout
+  // Create payment order with One Click Checkout according to documentation
   async createOrder(orderData) {
     if (!this.initialized) {
       throw new Error('Cashfree service not initialized');
@@ -59,9 +59,8 @@ class CashfreeService {
       orderMeta = {},
     } = orderData;
 
-    // One Click Checkout payload structure
+    // One Click Checkout payload according to Cashfree documentation
     const payload = {
-      order_id: orderId,
       order_amount: orderAmount,
       order_currency: orderCurrency,
       customer_details: {
@@ -73,15 +72,38 @@ class CashfreeService {
       order_meta: {
         return_url: returnUrl,
         notify_url: notifyUrl,
-        payment_methods: 'cc,dc,nb,upi,app,paylater',
         ...orderMeta,
       },
-      order_note: orderNote,
-      // One Click Checkout specific fields
-      checkout: {
-        theme_color: '#3b82f6', // Primary color for checkout
-        merchant_name: 'MockMate',
-        return_url: returnUrl,
+      // Cart details required for One Click Checkout
+      cart_details: {
+        cart_id: orderId,
+        cart_items: [
+          {
+            item_id: orderMeta.packageId || 'credits_package',
+            item_name: 'MockMate Credits',
+            item_description: orderNote || 'Interview preparation credits',
+            item_quantity: 1,
+            item_price: orderAmount,
+            item_currency: orderCurrency,
+            item_tags: ['credits', 'interview_prep']
+          }
+        ]
+      },
+      // One Click Checkout product configuration
+      products: {
+        one_click_checkout: {
+          enabled: true,
+          conditions: [
+            {
+              action: 'ALLOW',
+              values: [
+                'checkoutCollectAddress',
+                'checkoutCollectEmail',
+                'checkoutCollectPhone'
+              ]
+            }
+          ]
+        }
       }
     };
 
@@ -89,10 +111,10 @@ class CashfreeService {
       const response = await axios.post(
         `${this.baseURL}/orders`,
         payload,
-        { headers: this.generateAuthHeaders() }
+        { headers: this.generateAuthHeaders(true) } // Use 2022-09-01 API version
       );
 
-      logger.info('Cashfree order created', {
+      logger.info('Cashfree One Click Checkout order created', {
         orderId,
         orderAmount,
         cfOrderId: response.data.cf_order_id,
@@ -100,16 +122,14 @@ class CashfreeService {
         responseFields: Object.keys(response.data),
       });
 
-      // Construct payment link manually since Cashfree API doesn't return it for auto integrations
-      // Use payment_session_id for checkout URL (newer API)
+      // Construct payment link for One Click Checkout
       const sessionId = response.data.payment_session_id;
       let paymentLink = null;
       
       if (sessionId) {
-        // For One Click Checkout, use the checkout session URL
-        // Format: https://payments.cashfree.com/links/{session_id} for one-click checkout
+        // Use the standard checkout URL format for One Click Checkout
         const checkoutBaseUrl = this.baseURL.includes('sandbox') 
-          ? 'https://sandbox.cashfree.com' 
+          ? 'https://payments-test.cashfree.com' 
           : 'https://payments.cashfree.com';
         paymentLink = `${checkoutBaseUrl}/links/${sessionId}`;
       }
@@ -122,17 +142,17 @@ class CashfreeService {
           paymentSessionId: response.data.payment_session_id,
           orderStatus: response.data.order_status,
           orderToken: response.data.order_token,
-          paymentLink: paymentLink, // Constructed manually
+          paymentLink: paymentLink,
         },
       };
     } catch (error) {
-      logger.error('Cashfree order creation failed', {
+      logger.error('Cashfree One Click Checkout order creation failed', {
         orderId,
         error: error.response?.data || error.message,
       });
 
       throw new Error(
-        `Cashfree order creation failed: ${
+        `Cashfree One Click Checkout order creation failed: ${
           error.response?.data?.message || error.message
         }`
       );
