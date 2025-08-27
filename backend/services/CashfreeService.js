@@ -67,7 +67,7 @@ class CashfreeService {
         customer_id: customerDetails.customerId,
         customer_name: customerDetails.customerName,
         customer_email: customerDetails.customerEmail,
-        customer_phone: customerDetails.customerPhone || '',
+        customer_phone: customerDetails.customerPhone || '9999999999', // Default phone if not provided
       },
       order_meta: {
         return_url: returnUrl,
@@ -299,6 +299,7 @@ class CashfreeService {
           customerId: 'test_customer',
           customerName: 'Test Customer',
           customerEmail: 'test@example.com',
+          customerPhone: '9999999999', // Default test phone number
         },
         returnUrl: 'https://example.com/return',
         notifyUrl: 'https://example.com/notify',

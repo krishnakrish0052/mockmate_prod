@@ -273,7 +273,7 @@ router.post(
           credits: creditPackage.credits.toString(),
           customerName: req.user.name || 'Customer',
           customerEmail: req.user.email,
-          customerPhone: req.user.phone || '',
+          customerPhone: req.user.phone || '9999999999', // Default phone for users without phone
           description: `${creditPackage.name} - ${creditPackage.credits} credits`,
           returnUrl: `${process.env.FRONTEND_URL}/payment/success`,
           notifyUrl: `${process.env.BACKEND_URL || 'http://localhost:5000'}/api/payments/cashfree/webhook`,
