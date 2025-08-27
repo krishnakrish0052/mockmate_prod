@@ -337,13 +337,25 @@ class PaymentConfiguration {
   getFullData() {
     return {
       ...this,
-      configuration: JSON.parse(this.configuration || '{}'),
-      supported_currencies: JSON.parse(this.supported_currencies || '["USD"]'),
-      supported_countries: JSON.parse(this.supported_countries || '["US"]'),
-      features: JSON.parse(this.features || '{}'),
-      limits: JSON.parse(this.limits || '{}'),
-      metadata: JSON.parse(this.metadata || '{}'),
+      configuration: this._parseJsonField(this.configuration, {}),
+      supported_currencies: this._parseJsonField(this.supported_currencies, ["USD"]),
+      supported_countries: this._parseJsonField(this.supported_countries, ["US"]),
+      features: this._parseJsonField(this.features, {}),
+      limits: this._parseJsonField(this.limits, {}),
+      metadata: this._parseJsonField(this.metadata, {}),
     };
+  }
+
+  // Helper method to safely parse JSON fields
+  _parseJsonField(field, defaultValue) {
+    if (!field) return defaultValue;
+    if (typeof field === 'object') return field;
+    try {
+      return JSON.parse(field);
+    } catch (e) {
+      console.warn(`Failed to parse JSON field: ${field}`);
+      return defaultValue;
+    }
   }
 
   // Get provider statistics

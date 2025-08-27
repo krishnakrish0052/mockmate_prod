@@ -26,8 +26,10 @@ class PaymentService {
     }
 
     try {
-      // Get active configurations from database
-      const activeConfigs = await PaymentConfiguration.getActiveConfigurations();
+      // Get active configurations from database (both test and production)
+      const testConfigs = await PaymentConfiguration.getActiveConfigurations(true);
+      const prodConfigs = await PaymentConfiguration.getActiveConfigurations(false);
+      const activeConfigs = [...testConfigs, ...prodConfigs];
 
       // Clear existing providers
       this.providers.clear();
