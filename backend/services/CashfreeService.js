@@ -75,7 +75,7 @@ class CashfreeService {
         payment_methods: 'cc,dc,nb,upi,app,paylater', // Updated payment methods as per API spec
         ...orderMeta,
       },
-      order_note: orderNote,
+      order_note: orderNote
     };
 
     try {
@@ -91,6 +91,12 @@ class CashfreeService {
         cfOrderId: response.data.cf_order_id,
       });
 
+      // Construct payment link manually since Cashfree API doesn't return it for auto integrations
+      // Use payment_session_id for checkout URL (newer API)
+      const checkoutUrl = this.baseURL.replace('/pg', '') + '/checkout';
+      const sessionId = response.data.payment_session_id;
+      const paymentLink = sessionId ? `${checkoutUrl}?payment_session_id=${sessionId}` : null;
+      
       return {
         success: true,
         data: {
@@ -99,7 +105,7 @@ class CashfreeService {
           paymentSessionId: response.data.payment_session_id,
           orderStatus: response.data.order_status,
           orderToken: response.data.order_token,
-          paymentLink: response.data.payment_link,
+          paymentLink: paymentLink, // Constructed manually
         },
       };
     } catch (error) {
