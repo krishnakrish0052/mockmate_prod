@@ -42,7 +42,7 @@ class CashfreeService {
     };
   }
 
-  // Create payment order with One Click Checkout according to documentation
+  // Create payment order with standard Cashfree checkout
   async createOrder(orderData) {
     if (!this.initialized) {
       throw new Error('Cashfree service not initialized');
@@ -59,8 +59,9 @@ class CashfreeService {
       orderMeta = {},
     } = orderData;
 
-    // One Click Checkout payload according to Cashfree documentation
+    // Standard Cashfree order payload
     const payload = {
+      order_id: orderId,
       order_amount: orderAmount,
       order_currency: orderCurrency,
       customer_details: {
@@ -74,37 +75,7 @@ class CashfreeService {
         notify_url: notifyUrl,
         ...orderMeta,
       },
-      // Cart details required for One Click Checkout
-      cart_details: {
-        cart_id: orderId,
-        cart_items: [
-          {
-            item_id: orderMeta.packageId || 'credits_package',
-            item_name: 'MockMate Credits',
-            item_description: orderNote || 'Interview preparation credits',
-            item_quantity: 1,
-            item_price: orderAmount,
-            item_currency: orderCurrency,
-            item_tags: ['credits', 'interview_prep']
-          }
-        ]
-      },
-      // One Click Checkout product configuration
-      products: {
-        one_click_checkout: {
-          enabled: true,
-          conditions: [
-            {
-              action: 'ALLOW',
-              values: [
-                'checkoutCollectAddress',
-                'checkoutCollectEmail',
-                'checkoutCollectPhone'
-              ]
-            }
-          ]
-        }
-      }
+      order_note: orderNote || 'Interview preparation credits'
     };
 
     try {
@@ -122,16 +93,19 @@ class CashfreeService {
         responseFields: Object.keys(response.data),
       });
 
-      // Construct payment link for One Click Checkout
+      // Construct payment link using Cashfree hosted checkout page
       const sessionId = response.data.payment_session_id;
       let paymentLink = null;
       
       if (sessionId) {
-        // Use the correct Cashfree payment gateway URL format
-        const checkoutBaseUrl = this.baseURL.includes('sandbox') 
-          ? 'https://payments-test.cashfree.com' 
-          : 'https://payments.cashfree.com';
-        paymentLink = `${checkoutBaseUrl}/pay/${sessionId}`;
+        // Use the Cashfree hosted checkout page URL
+        const isTestMode = this.baseURL.includes('sandbox');
+        paymentLink = isTestMode 
+          ? `https://payments-test.cashfree.com/pay/order` 
+          : `https://payments.cashfree.com/pay/order`;
+        
+        // Add payment session ID as query parameter
+        paymentLink += `?order_token=${sessionId}`;
       }
       
       return {
