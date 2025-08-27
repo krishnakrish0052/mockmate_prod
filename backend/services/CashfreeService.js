@@ -93,9 +93,17 @@ class CashfreeService {
 
       // Construct payment link manually since Cashfree API doesn't return it for auto integrations
       // Use payment_session_id for checkout URL (newer API)
-      const checkoutUrl = this.baseURL.replace('/pg', '') + '/checkout';
       const sessionId = response.data.payment_session_id;
-      const paymentLink = sessionId ? `${checkoutUrl}?payment_session_id=${sessionId}` : null;
+      let paymentLink = null;
+      
+      if (sessionId) {
+        // Use the correct Cashfree hosted checkout URL format
+        const checkoutBaseUrl = this.baseURL.includes('sandbox') 
+          ? 'https://sandbox.cashfree.com' 
+          : 'https://payments.cashfree.com';
+        // Format: https://sandbox.cashfree.com/links/<payment_session_id>
+        paymentLink = `${checkoutBaseUrl}/links/${sessionId}`;
+      }
       
       return {
         success: true,

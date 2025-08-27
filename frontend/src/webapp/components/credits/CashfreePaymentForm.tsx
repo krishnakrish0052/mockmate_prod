@@ -45,22 +45,32 @@ const CashfreePaymentForm: React.FC<CashfreePaymentFormProps> = ({
           });
 
           if (response.ok) {
-            const result = await response.json();
-            const status = result.data?.orderStatus;
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+              const result = await response.json();
+              const status = result.data?.orderStatus;
 
-            if (status === 'PAID') {
-              setPaymentStatus('success');
-              onSuccess();
-              clearInterval(statusCheckInterval);
-            } else if (['EXPIRED', 'CANCELLED', 'FAILED'].includes(status)) {
-              setPaymentStatus('failed');
-              setError(`Payment ${status.toLowerCase()}`);
-              onError(`Payment ${status.toLowerCase()}`);
-              clearInterval(statusCheckInterval);
+              if (status === 'PAID') {
+                setPaymentStatus('success');
+                onSuccess();
+                clearInterval(statusCheckInterval);
+              } else if (['EXPIRED', 'CANCELLED', 'FAILED'].includes(status)) {
+                setPaymentStatus('failed');
+                setError(`Payment ${status.toLowerCase()}`);
+                onError(`Payment ${status.toLowerCase()}`);
+                clearInterval(statusCheckInterval);
+              }
+            } else {
+              console.warn('Received non-JSON response from payment status API');
+              const textResponse = await response.text();
+              console.log('Response body:', textResponse.substring(0, 200) + '...');
             }
+          } else {
+            console.warn(`Payment status API returned ${response.status}: ${response.statusText}`);
           }
         } catch (error) {
           console.error('Error checking payment status:', error);
+          // Don't clear interval on error, continue checking
         }
       }, 3000); // Check every 3 seconds
     }
