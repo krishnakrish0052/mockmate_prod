@@ -337,11 +337,11 @@ class PaymentService {
         customerId: metadata.userId || 'guest_customer',
         customerName: metadata.customerName || 'Customer',
         customerEmail: metadata.customerEmail || 'customer@example.com',
-        customerPhone: metadata.customerPhone || '',
+        customerPhone: metadata.customerPhone || '9999999999', // Default phone for Cashfree API
       },
       orderNote: metadata.description || 'Credit package purchase',
-      returnUrl: metadata.returnUrl || `${process.env.FRONTEND_URL}/payment/success`,
-      notifyUrl: metadata.notifyUrl || `${process.env.BACKEND_URL}/api/payments/cashfree/webhook`,
+      returnUrl: metadata.returnUrl || `${process.env.FRONTEND_URL || 'https://mock-mate.com'}/payment/success`,
+      notifyUrl: metadata.notifyUrl || `${process.env.BACKEND_URL || 'https://api.mock-mate.com'}/api/payments/cashfree/webhook`,
       orderMeta: {
         credits: metadata.credits,
         packageId: metadata.packageId,

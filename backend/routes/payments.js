@@ -275,8 +275,8 @@ router.post(
           customerEmail: req.user.email,
           customerPhone: req.user.phone || '9999999999', // Default phone for users without phone
           description: `${creditPackage.name} - ${creditPackage.credits} credits`,
-          returnUrl: `${process.env.FRONTEND_URL}/payment/success`,
-          notifyUrl: `${process.env.BACKEND_URL || 'http://localhost:5000'}/api/payments/cashfree/webhook`,
+          returnUrl: `${process.env.FRONTEND_URL || 'https://mock-mate.com'}/payment/success`,
+          notifyUrl: `${process.env.BACKEND_URL || 'https://api.mock-mate.com'}/api/payments/cashfree/webhook`,
         };
 
         // Convert price from USD cents to INR (approximate conversion)
