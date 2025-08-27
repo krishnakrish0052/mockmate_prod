@@ -4,13 +4,40 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 async function migrateStripeToCashfreeConfig() {
-  const pool = new Pool({
-    host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT) || 5432,
-    database: process.env.DB_NAME || 'mockmate_db',
-    user: process.env.DB_USER || 'mockmate_user',
-    password: process.env.DB_PASSWORD || '',
+  // Try different database configuration approaches
+  let poolConfig;
+  
+  if (process.env.DATABASE_URL) {
+    // If DATABASE_URL is provided, use it (common in production)
+    poolConfig = {
+      connectionString: process.env.DATABASE_URL,
+      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    };
+  } else {
+    // Use individual environment variables
+    poolConfig = {
+      host: process.env.DB_HOST || 'localhost',
+      port: parseInt(process.env.DB_PORT) || 5432,
+      database: process.env.DB_NAME || 'mockmate_db',
+      user: process.env.DB_USER || 'postgres',
+      password: process.env.DB_PASSWORD || undefined, // Use undefined instead of empty string
+    };
+    
+    // Remove undefined password to allow passwordless connections
+    if (!process.env.DB_PASSWORD) {
+      delete poolConfig.password;
+    }
+  }
+  
+  console.log('🔗 Connecting to database with config:', {
+    host: poolConfig.host || 'via DATABASE_URL',
+    port: poolConfig.port || 'via DATABASE_URL',
+    database: poolConfig.database || 'via DATABASE_URL',
+    user: poolConfig.user || 'via DATABASE_URL',
+    hasPassword: !!poolConfig.password || !!poolConfig.connectionString
   });
+  
+  const pool = new Pool(poolConfig);
 
   try {
     console.log('🔄 Migrating Stripe configurations to Cashfree in system_config...\n');
