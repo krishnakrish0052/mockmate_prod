@@ -89,6 +89,8 @@ class CashfreeService {
         orderId,
         orderAmount,
         cfOrderId: response.data.cf_order_id,
+        paymentSessionId: response.data.payment_session_id,
+        responseFields: Object.keys(response.data),
       });
 
       // Construct payment link manually since Cashfree API doesn't return it for auto integrations
@@ -98,11 +100,11 @@ class CashfreeService {
       
       if (sessionId) {
         // Use the correct Cashfree hosted checkout URL format
+        // According to Cashfree docs, the format is: https://payments.cashfree.com/forms/{session_id}
         const checkoutBaseUrl = this.baseURL.includes('sandbox') 
-          ? 'https://sandbox.cashfree.com' 
+          ? 'https://payments-test.cashfree.com' 
           : 'https://payments.cashfree.com';
-        // Format: https://sandbox.cashfree.com/links/<payment_session_id>
-        paymentLink = `${checkoutBaseUrl}/links/${sessionId}`;
+        paymentLink = `${checkoutBaseUrl}/forms/${sessionId}`;
       }
       
       return {
