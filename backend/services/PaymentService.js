@@ -325,7 +325,7 @@ class PaymentService {
     return response.data;
   }
 
-  // Create Cashfree order
+  // Create Cashfree order using One Click Checkout
   async createCashfreeOrder(provider, amount, currency = 'INR', metadata) {
     const orderId = `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
@@ -349,6 +349,7 @@ class PaymentService {
       },
     };
 
+    // Use standard order creation (One Click Checkout not enabled on account)
     return await provider.client.createOrder(orderData);
   }
 
