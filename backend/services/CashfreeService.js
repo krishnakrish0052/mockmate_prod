@@ -32,22 +32,13 @@ class CashfreeService {
   }
 
   // Generate Cashfree authentication headers
-  generateAuthHeaders(timestamp = null) {
-    if (!timestamp) {
-      timestamp = Math.floor(Date.now() / 1000).toString();
-    }
-
-    const signature = crypto
-      .createHmac('sha256', this.secretKey)
-      .update(timestamp)
-      .digest('base64');
-
+  generateAuthHeaders() {
     return {
       'x-client-id': this.appId,
-      'x-client-signature': signature,
-      'x-timestamp': timestamp,
-      'x-version': '2022-09-01',
+      'x-client-secret': this.secretKey,
+      'x-api-version': '2023-08-01',
       'Content-Type': 'application/json',
+      'Accept': 'application/json'
     };
   }
 
@@ -81,7 +72,7 @@ class CashfreeService {
       order_meta: {
         return_url: returnUrl,
         notify_url: notifyUrl,
-        payment_methods: 'cc,dc,nb,upi,app,wallet', // All payment methods
+        payment_methods: 'cc,dc,nb,upi,app,paylater', // Updated payment methods as per API spec
         ...orderMeta,
       },
       order_note: orderNote,
