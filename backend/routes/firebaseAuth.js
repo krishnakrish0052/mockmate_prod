@@ -7,7 +7,9 @@ import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Rate limiting for auth requests
+// Rate limiting for auth requests - DISABLED for testing
+// Uncomment to re-enable:
+/*
 const authRateLimit = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 10, // 10 requests per windowMs
@@ -19,6 +21,10 @@ const authRateLimit = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
+*/
+
+// Placeholder middleware to replace authRateLimit
+const authRateLimit = (req, res, next) => next();
 
 /**
  * POST /api/firebase-auth/verify-token

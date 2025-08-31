@@ -195,7 +195,9 @@ app.options('*', (req, res) => {
   res.status(204).send();
 });
 
-// Rate limiting with enhanced security
+// Rate limiting disabled for development/testing
+// Uncomment the following block to re-enable rate limiting:
+/*
 const limiter = rateLimit({
   windowMs: (process.env.RATE_LIMIT_WINDOW || 15) * 60 * 1000, // 15 minutes
   max: process.env.RATE_LIMIT_MAX || 100, // limit each IP to 100 requests per windowMs
@@ -234,6 +236,7 @@ const limiter = rateLimit({
   }
 });
 app.use('/api/', limiter);
+*/
 
 // Logging
 app.use(morgan('combined', { stream: { write: message => logger.info(message.trim()) } }));
