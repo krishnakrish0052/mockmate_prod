@@ -80,7 +80,41 @@ webhook-diagnostic-complete.js
 *.sql.bak
 *.dump
 *.sql
-!minimal-production-schema.sql
-!populate-dynamic-config.sql
 mockmate-production-backup-*.sql
-export-database.ps1
+
+# PowerShell scripts
+*.ps1
+
+# Test and development files
+test-*.js
+test-*.html
+test_*.js
+debug_*.js
+check_*.js
+quick_test.js
+simple-email-test.js
+add_sample_data*.js
+restore_*.js
+restore_*.cjs
+manual_db_restore.cjs
+verify_restoration.js
+configure_*.js
+fix_*.js
+activate_*.js
+add_*_config.js
+update_*_config.js
+create_system_config*.js
+apply_*_migration.js
+prod-diagnostics*.js
+production-diagnostics*.js
+production-fix*.js
+
+# Test directories
+tests/
+examples/
+
+# Development documentation (keep essential docs)
+admin_login_solution.md
+system_status.md
+test-email-templates.js
+email-template-test-report.json
