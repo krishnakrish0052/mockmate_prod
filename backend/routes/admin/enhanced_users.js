@@ -137,13 +137,13 @@ router.get(
     }
 
     if (minSessions) {
-      conditions.push(`u.total_sessions >= $${paramIndex}`);
+      conditions.push(`u.total_sessions_completed >= $${paramIndex}`);
       params.push(parseInt(minSessions));
       paramIndex++;
     }
 
     if (maxSessions) {
-      conditions.push(`u.total_sessions <= $${paramIndex}`);
+      conditions.push(`u.total_sessions_completed <= $${paramIndex}`);
       params.push(parseInt(maxSessions));
       paramIndex++;
     }
@@ -166,7 +166,7 @@ router.get(
         case 'payment_count':
           return 'COUNT(DISTINCT p.id)';
         case 'total_sessions':
-          return 'u.total_sessions';
+          return 'u.total_sessions_completed';
         case 'total_spent_usd':
           return 'u.total_spent_usd';
         case 'credits':
@@ -191,7 +191,7 @@ router.get(
         u.credits, u.subscription_tier, u.is_active, u.is_verified, u.is_suspended,
         u.suspension_reason, u.suspended_at, u.suspended_by, u.admin_notes,
         u.registration_source, u.registration_ip, u.created_at, u.last_activity,
-        u.total_sessions, u.total_spent_usd, u.lifetime_value_usd, u.tags,
+        u.total_sessions_completed, u.total_spent_usd, u.lifetime_value_usd, u.tags,
         u.marketing_consent, u.email_verified_at, u.avatar_url,
         
         -- Session statistics
@@ -267,7 +267,7 @@ router.get(
       emailVerifiedAt: row.email_verified_at,
 
       // Statistics
-      totalSessions: parseInt(row.total_sessions || 0),
+      totalSessions: parseInt(row.total_sessions_completed || 0),
       sessionCount: parseInt(row.session_count || 0),
       completedSessions: parseInt(row.completed_sessions || 0),
       recentSessions: parseInt(row.recent_sessions || 0),
