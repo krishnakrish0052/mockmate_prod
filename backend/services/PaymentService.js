@@ -197,8 +197,9 @@ class PaymentService {
   }
 
   // Create payment intent (primarily using Cashfree)
-  async createPaymentIntent(amount, currency, metadata = {}, userId = null, country = 'IN') {
+  async createPaymentIntent(amount, currency, metadata = {}, userId = null, country = 'IN', options = {}) {
     const provider = await this.getOptimalProvider(amount, currency, country, userId);
+    const { useOneClickCheckout = false } = options;
 
     let paymentIntent;
     const startTime = Date.now();
@@ -206,7 +207,7 @@ class PaymentService {
     try {
       switch (provider.type) {
         case 'cashfree':
-          paymentIntent = await this.createCashfreeOrder(provider, amount, currency, metadata);
+          paymentIntent = await this.createCashfreeOrder(provider, amount, currency, metadata, useOneClickCheckout);
           break;
         case 'paypal':
           paymentIntent = await this.createPayPalOrder(provider, amount, currency, metadata);
@@ -231,6 +232,7 @@ class PaymentService {
         amount,
         currency,
         processingTime,
+        oneClickCheckout: useOneClickCheckout
       });
 
       return paymentIntent;
@@ -325,8 +327,8 @@ class PaymentService {
     return response.data;
   }
 
-  // Create Cashfree order using One Click Checkout
-  async createCashfreeOrder(provider, amount, currency = 'INR', metadata) {
+  // Create Cashfree order or one-click checkout link
+  async createCashfreeOrder(provider, amount, currency = 'INR', metadata, useOneClickCheckout = false) {
     const orderId = `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
     const orderData = {
@@ -349,8 +351,24 @@ class PaymentService {
       },
     };
 
-    // Use standard order creation (One Click Checkout not enabled on account)
-    return await provider.client.createOrder(orderData);
+    // Choose between one-click checkout and standard order based on preference
+    if (useOneClickCheckout) {
+      logger.info('Creating Cashfree One-Click Checkout link', {
+        orderId,
+        amount,
+        currency,
+        userId: metadata.userId
+      });
+      return await provider.client.createOneClickCheckout(orderData);
+    } else {
+      logger.info('Creating standard Cashfree order', {
+        orderId,
+        amount,
+        currency,
+        userId: metadata.userId
+      });
+      return await provider.client.createOrder(orderData);
+    }
   }
 
   // Confirm payment

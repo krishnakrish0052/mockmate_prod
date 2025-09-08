@@ -73,20 +73,21 @@ async function getActiveSubscriptionPlans() {
 // Helper function to identify payment gateway from payment record
 function identifyPaymentGateway(paymentRecord) {
   if (paymentRecord.cashfree_order_id) {
-    return { gateway: 'cashfree', id: paymentRecord.cashfree_order_id };
+    return { gateway: 'cashfree', id: paymentRecord.cashfree_order_id, type: 'order' };
   }
-  return { gateway: 'unknown', id: null };
+  if (paymentRecord.cashfree_link_id) {
+    return { gateway: 'cashfree', id: paymentRecord.cashfree_link_id, type: 'link' };
+  }
+  return { gateway: 'unknown', id: null, type: 'unknown' };
 }
 
-// Helper function to get payment record by Cashfree order ID
+// Helper function to get payment record by Cashfree order ID or link ID
 async function getPaymentRecordByGatewayId(gatewayId, userId) {
   const pool = getPool();
   
-  // Try to find payment by Cashfree order ID
+  // Use the database function to find payment by gateway ID (works for both orders and links)
   const paymentQuery = `
-    SELECT * FROM payments 
-    WHERE cashfree_order_id = $1 
-    AND user_id = $2
+    SELECT * FROM find_payment_by_gateway_id($1, $2)
   `;
   
   const result = await pool.query(paymentQuery, [gatewayId, userId]);
@@ -96,12 +97,12 @@ async function getPaymentRecordByGatewayId(gatewayId, userId) {
   }
   
   const paymentRecord = result.rows[0];
-  const gatewayInfo = identifyPaymentGateway(paymentRecord);
   
   return {
     ...paymentRecord,
-    gateway: gatewayInfo.gateway,
-    gatewayId: gatewayInfo.id,
+    gateway: paymentRecord.gateway,
+    gatewayId: gatewayId,
+    gatewayType: paymentRecord.gateway_type,
   };
 }
 
@@ -132,6 +133,7 @@ async function confirmPaymentWithGateway(paymentRecord, req) {
 // Validation rules
 const createPaymentIntentValidation = [
   body('packageId').notEmpty().withMessage('Package ID is required'),
+  body('useOneClickCheckout').optional().isBoolean().withMessage('useOneClickCheckout must be boolean'),
 ];
 
 const confirmPaymentValidation = [
@@ -242,7 +244,7 @@ router.post(
         });
       }
 
-      const { packageId } = req.body;
+      const { packageId, useOneClickCheckout = false } = req.body;
       const CREDIT_PACKAGES = await getActiveCreditPackages();
       const creditPackage = CREDIT_PACKAGES[packageId];
 
@@ -257,6 +259,7 @@ router.post(
       const paymentProvider = 'cashfree';
       const pool = getPool();
       const paymentId = uuidv4();
+      const checkoutType = useOneClickCheckout ? 'oneclick' : 'standard';
       // Create Cashfree order
       try {
         await paymentService.initializeProviders();
@@ -286,28 +289,55 @@ router.post(
           amountInINR,
           'INR',
           metadata,
-          req.user.id
+          req.user.id,
+          'IN',
+          { useOneClickCheckout }
         );
 
         paymentIntent = cashfreeOrder.data;
 
         // Store payment record for Cashfree
-        await pool.query(
-          `
-          INSERT INTO payments (
-            id, user_id, cashfree_order_id, package_id, 
-            credits, amount, status, payment_provider, created_at
-          ) VALUES ($1, $2, $3, $4, $5, $6, 'pending', 'cashfree', CURRENT_TIMESTAMP)
-        `,
-          [
-            paymentId,
-            req.user.id,
-            paymentIntent.orderId,
-            packageId,
-            creditPackage.credits,
-            creditPackage.price, // Store original USD price
-          ]
-        );
+        if (useOneClickCheckout && paymentIntent.isOneClickCheckout) {
+          // Store one-click checkout payment
+          await pool.query(
+            `
+            INSERT INTO payments (
+              id, user_id, cashfree_link_id, cf_link_id, package_id, 
+              credits, amount, status, payment_provider, checkout_type,
+              payment_link_url, link_created_at, link_expiry_at, created_at
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending', 'cashfree', 'oneclick', $8, CURRENT_TIMESTAMP, $9, CURRENT_TIMESTAMP)
+          `,
+            [
+              paymentId,
+              req.user.id,
+              paymentIntent.linkId,
+              paymentIntent.cfLinkId,
+              packageId,
+              creditPackage.credits,
+              creditPackage.price, // Store original USD price
+              paymentIntent.paymentLink,
+              new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours expiry
+            ]
+          );
+        } else {
+          // Store standard order payment
+          await pool.query(
+            `
+            INSERT INTO payments (
+              id, user_id, cashfree_order_id, package_id, 
+              credits, amount, status, payment_provider, checkout_type, created_at
+            ) VALUES ($1, $2, $3, $4, $5, $6, 'pending', 'cashfree', 'standard', CURRENT_TIMESTAMP)
+          `,
+            [
+              paymentId,
+              req.user.id,
+              paymentIntent.orderId,
+              packageId,
+              creditPackage.credits,
+              creditPackage.price, // Store original USD price
+            ]
+          );
+        }
 
       } catch (error) {
         throw new Error(`Cashfree payment creation failed: ${error.message}`);
@@ -322,11 +352,13 @@ router.post(
 
       res.json({
         paymentIntent: {
-          id: paymentIntent.id || paymentIntent.cfOrderId,
+          id: paymentIntent.id || paymentIntent.cfOrderId || paymentIntent.linkId,
           clientSecret: paymentIntent.client_secret,
-          status: paymentIntent.status || paymentIntent.orderStatus,
+          status: paymentIntent.status || paymentIntent.orderStatus || paymentIntent.linkStatus,
           paymentLink: paymentIntent.paymentLink, // For Cashfree
           orderToken: paymentIntent.orderToken, // For Cashfree
+          isOneClickCheckout: paymentIntent.isOneClickCheckout || false,
+          checkoutType: checkoutType,
         },
         package: {
           id: packageId,
@@ -1006,5 +1038,178 @@ async function handleCashfreePaymentCanceled(data) {
     logError(error, { context: 'handleCashfreePaymentCanceled', orderId: order?.order_id });
   }
 }
+
+// Create one-click checkout link (dedicated endpoint)
+router.post(
+  '/create-oneclick-checkout',
+  authenticateToken,
+  userRateLimit(5, 60000), // 5 payment attempts per minute
+  createPaymentIntentValidation,
+  async (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          error: 'Validation failed',
+          code: 'VALIDATION_ERROR',
+          details: errors.array(),
+        });
+      }
+
+      const { packageId } = req.body;
+      const CREDIT_PACKAGES = await getActiveCreditPackages();
+      const creditPackage = CREDIT_PACKAGES[packageId];
+
+      if (!creditPackage) {
+        return res.status(400).json({
+          error: 'Invalid package',
+          code: 'INVALID_PACKAGE',
+        });
+      }
+
+      let paymentIntent;
+      const paymentProvider = 'cashfree';
+      const pool = getPool();
+      const paymentId = uuidv4();
+
+      // Force one-click checkout
+      try {
+        await paymentService.initializeProviders();
+        const activeProviders = paymentService.getActiveProviders();
+        const cashfreeProvider = activeProviders.find(p => p.type === 'cashfree');
+        
+        if (!cashfreeProvider) {
+          throw new Error('Cashfree gateway not available or not configured');
+        }
+
+        const metadata = {
+          userId: req.user.id.toString(),
+          packageId,
+          credits: creditPackage.credits.toString(),
+          customerName: req.user.name || 'Customer',
+          customerEmail: req.user.email,
+          customerPhone: req.user.phone || '9999999999', // Default phone for users without phone
+          description: `${creditPackage.name} - ${creditPackage.credits} credits`,
+          returnUrl: `${process.env.FRONTEND_URL || 'https://mock-mate.com'}/payment/success`,
+          notifyUrl: `${process.env.BACKEND_URL || 'https://api.mock-mate.com'}/api/payments/cashfree/webhook`,
+        };
+
+        // Convert price from USD cents to INR (approximate conversion)
+        const amountInINR = Math.round((creditPackage.price / 100) * 83); // 1 USD ≈ 83 INR
+
+        const cashfreeOrder = await paymentService.createPaymentIntent(
+          amountInINR,
+          'INR',
+          metadata,
+          req.user.id,
+          'IN',
+          { useOneClickCheckout: true }
+        );
+
+        paymentIntent = cashfreeOrder.data;
+
+        // Store one-click checkout payment
+        await pool.query(
+          `
+          INSERT INTO payments (
+            id, user_id, cashfree_link_id, cf_link_id, package_id, 
+            credits, amount, status, payment_provider, checkout_type,
+            payment_link_url, link_created_at, link_expiry_at, created_at
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending', 'cashfree', 'oneclick', $8, CURRENT_TIMESTAMP, $9, CURRENT_TIMESTAMP)
+        `,
+          [
+            paymentId,
+            req.user.id,
+            paymentIntent.linkId,
+            paymentIntent.cfLinkId,
+            packageId,
+            creditPackage.credits,
+            creditPackage.price, // Store original USD price
+            paymentIntent.paymentLink,
+            new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours expiry
+          ]
+        );
+
+      } catch (error) {
+        throw new Error(`Cashfree one-click checkout creation failed: ${error.message}`);
+      }
+
+      logPaymentEvent('ONECLICK_CHECKOUT_CREATED', req.user.id, creditPackage.price, {
+        linkId: paymentIntent.linkId,
+        packageId,
+        credits: creditPackage.credits,
+        gateway: paymentProvider,
+      });
+
+      res.json({
+        success: true,
+        paymentLink: paymentIntent.paymentLink,
+        linkId: paymentIntent.linkId,
+        package: {
+          id: packageId,
+          ...creditPackage,
+        },
+        gateway: paymentProvider,
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      });
+    } catch (error) {
+      logError(error, { endpoint: 'payments/create-oneclick-checkout', userId: req.user?.id });
+      res.status(500).json({
+        error: 'Failed to create one-click checkout',
+        code: 'ONECLICK_CHECKOUT_ERROR',
+        message: error.message,
+      });
+    }
+  }
+);
+
+// Get payment link status
+router.get('/cashfree/link-status/:linkId', authenticateToken, async (req, res) => {
+  try {
+    const { linkId } = req.params;
+    
+    // Verify the link belongs to the user
+    const pool = getPool();
+    const paymentQuery = `
+      SELECT * FROM payments 
+      WHERE cashfree_link_id = $1 AND user_id = $2
+    `;
+    const paymentResult = await pool.query(paymentQuery, [linkId, req.user.id]);
+    
+    if (paymentResult.rows.length === 0) {
+      return res.status(404).json({
+        error: 'Payment link not found',
+        code: 'LINK_NOT_FOUND',
+      });
+    }
+    
+    // Get link status from Cashfree
+    await paymentService.initializeProviders();
+    const activeProviders = paymentService.getActiveProviders();
+    const cashfreeProvider = activeProviders.find(p => p.type === 'cashfree');
+    
+    if (!cashfreeProvider) {
+      return res.status(500).json({
+        error: 'Cashfree service not available',
+        code: 'SERVICE_UNAVAILABLE',
+      });
+    }
+    
+    const providerClient = paymentService.getProviderClient(cashfreeProvider.configId);
+    const linkStatus = await providerClient.getPaymentLinkStatus(linkId);
+    
+    res.json({
+      success: true,
+      data: linkStatus.data,
+    });
+  } catch (error) {
+    logError(error, { endpoint: 'payments/cashfree/link-status', linkId: req.params.linkId });
+    res.status(500).json({
+      error: 'Failed to get payment link status',
+      code: 'LINK_STATUS_ERROR',
+      message: error.message,
+    });
+  }
+});
 
 export default router;

@@ -499,17 +499,60 @@ const PaymentGatewaysTab: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex items-center space-x-3">
-                <input
-                  type="checkbox"
-                  id="cashfree_test_mode"
-                  checked={configuration.cashfree?.is_test_mode || true}
-                  onChange={(e) => updateConfiguration('cashfree', 'is_test_mode', e.target.checked)}
-                  className="rounded bg-cli-darker border-cli-gray text-primary-500 focus:ring-primary-500"
-                />
-                <label htmlFor="cashfree_test_mode" className="text-cli-light-gray font-mono text-sm">
-                  Test Mode (Sandbox)
-                </label>
+              <div className="space-y-3">
+                <div className="flex items-center space-x-3">
+                  <input
+                    type="checkbox"
+                    id="cashfree_test_mode"
+                    checked={configuration.cashfree?.is_test_mode || true}
+                    onChange={(e) => updateConfiguration('cashfree', 'is_test_mode', e.target.checked)}
+                    className="rounded bg-cli-darker border-cli-gray text-primary-500 focus:ring-primary-500"
+                  />
+                  <label htmlFor="cashfree_test_mode" className="text-cli-light-gray font-mono text-sm">
+                    Test Mode (Sandbox)
+                  </label>
+                </div>
+                
+                <div className="flex items-center space-x-3">
+                  <input
+                    type="checkbox"
+                    id="cashfree_oneclick_enabled"
+                    checked={configuration.cashfree?.enable_oneclick_checkout === true}
+                    onChange={(e) => updateConfiguration('cashfree', 'enable_oneclick_checkout', e.target.checked)}
+                    className="rounded bg-cli-darker border-cli-gray text-primary-500 focus:ring-primary-500"
+                  />
+                  <label htmlFor="cashfree_oneclick_enabled" className="text-cli-light-gray font-mono text-sm">
+                    ⚡ Enable One-Click Checkout
+                  </label>
+                </div>
+                
+                {configuration.cashfree?.enable_oneclick_checkout && (
+                  <div className="flex items-center space-x-3 ml-6">
+                    <input
+                      type="checkbox"
+                      id="cashfree_default_oneclick"
+                      checked={configuration.cashfree?.default_to_oneclick === true}
+                      onChange={(e) => updateConfiguration('cashfree', 'default_to_oneclick', e.target.checked)}
+                      className="rounded bg-cli-darker border-cli-gray text-primary-500 focus:ring-primary-500"
+                    />
+                    <label htmlFor="cashfree_default_oneclick" className="text-cli-light-gray font-mono text-sm">
+                      Use as Default Checkout Method
+                    </label>
+                  </div>
+                )}
+              </div>
+              
+              <div className="p-3 rounded border border-cli-gray bg-cli-black">
+                <div className="font-mono text-xs text-cli-light-gray">
+                  <div className="font-medium mb-1 text-primary-500">$ ./oneclick-checkout --info</div>
+                  <div className="text-cli-gray space-y-1">
+                    <div>• One-Click creates direct payment links</div>
+                    <div>• Faster checkout with no redirects</div>
+                    <div>• Mobile optimized payment experience</div>
+                    <div>• Links expire in 24 hours</div>
+                    <div>• Better conversion rates for mobile users</div>
+                  </div>
+                </div>
               </div>
             </div>
           )}

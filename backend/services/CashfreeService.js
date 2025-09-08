@@ -414,6 +414,7 @@ class CashfreeService {
       orderNote = '',
       returnUrl,
       notifyUrl,
+      orderMeta = {},
     } = orderData;
 
     // One Click Checkout specific payload
@@ -432,6 +433,7 @@ class CashfreeService {
         return_url: returnUrl,
         notify_url: notifyUrl,
         order_id: orderId,
+        ...orderMeta,
       },
       link_auto_reminders: true,
       link_notify: {
@@ -452,16 +454,20 @@ class CashfreeService {
         linkId: orderId,
         linkAmount: orderAmount,
         linkUrl: response.data.link_url,
+        cfLinkId: response.data.cf_link_id,
       });
 
       return {
         success: true,
         data: {
           linkId: response.data.link_id,
+          cfLinkId: response.data.cf_link_id,
           linkUrl: response.data.link_url,
           linkStatus: response.data.link_status,
           linkAmount: response.data.link_amount,
           paymentLink: response.data.link_url, // Direct payment link
+          orderId: orderId, // Keep track of our internal order ID
+          isOneClickCheckout: true,
         },
       };
     } catch (error) {
@@ -478,8 +484,81 @@ class CashfreeService {
     }
   }
 
+  // Get payment link status
+  async getPaymentLinkStatus(linkId) {
+    if (!this.initialized) {
+      throw new Error('Cashfree service not initialized');
+    }
+
+    try {
+      const response = await axios.get(
+        `${this.baseURL}/links/${linkId}`,
+        { headers: this.generateAuthHeaders() }
+      );
+
+      return {
+        success: true,
+        data: {
+          linkId: response.data.link_id,
+          cfLinkId: response.data.cf_link_id,
+          linkStatus: response.data.link_status,
+          linkAmount: response.data.link_amount,
+          linkCurrency: response.data.link_currency,
+          linkUrl: response.data.link_url,
+          createdAt: response.data.link_created_at,
+        },
+      };
+    } catch (error) {
+      logger.error('Failed to get Cashfree payment link status', {
+        linkId,
+        error: error.response?.data || error.message,
+      });
+
+      throw new Error(
+        `Failed to get payment link status: ${
+          error.response?.data?.message || error.message
+        }`
+      );
+    }
+  }
+
+  // Get payments for a specific link
+  async getPaymentLinkPayments(linkId) {
+    if (!this.initialized) {
+      throw new Error('Cashfree service not initialized');
+    }
+
+    try {
+      const response = await axios.get(
+        `${this.baseURL}/links/${linkId}/payments`,
+        { headers: this.generateAuthHeaders() }
+      );
+
+      return {
+        success: true,
+        data: response.data,
+      };
+    } catch (error) {
+      logger.error('Failed to get Cashfree payment link payments', {
+        linkId,
+        error: error.response?.data || error.message,
+      });
+
+      throw new Error(
+        `Failed to get payment link payments: ${
+          error.response?.data?.message || error.message
+        }`
+      );
+    }
+  }
+
   // Generate unique order ID
   static generateOrderId(prefix = 'order') {
+    return `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  // Generate unique link ID for one-click checkout
+  static generateLinkId(prefix = 'link') {
     return `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 }

@@ -3,11 +3,14 @@ import { CliButton } from '../ui/CliComponents';
 
 interface CashfreePaymentFormProps {
   orderData: {
-    orderId: string;
-    cfOrderId: string;
-    paymentSessionId: string;
-    orderToken: string;
+    orderId?: string;
+    cfOrderId?: string;
+    paymentSessionId?: string;
+    orderToken?: string;
     paymentLink: string;
+    isOneClickCheckout?: boolean;
+    checkoutType?: 'standard' | 'oneclick';
+    linkId?: string;
   };
   packageInfo: {
     name: string;
@@ -37,7 +40,12 @@ const CashfreePaymentForm: React.FC<CashfreePaymentFormProps> = ({
     if (processing) {
       statusCheckInterval = setInterval(async () => {
         try {
-          const response = await fetch(`/api/payments/cashfree/status/${orderData.orderId}`, {
+          // Use different endpoint based on checkout type
+          const statusEndpoint = orderData.isOneClickCheckout || orderData.checkoutType === 'oneclick'
+            ? `/api/payments/cashfree/link-status/${orderData.linkId}`
+            : `/api/payments/cashfree/status/${orderData.orderId}`;
+            
+          const response = await fetch(statusEndpoint, {
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
@@ -48,17 +56,34 @@ const CashfreePaymentForm: React.FC<CashfreePaymentFormProps> = ({
             const contentType = response.headers.get('content-type');
             if (contentType && contentType.includes('application/json')) {
               const result = await response.json();
-              const status = result.data?.orderStatus;
-
-              if (status === 'PAID') {
-                setPaymentStatus('success');
-                onSuccess();
-                clearInterval(statusCheckInterval);
-              } else if (['EXPIRED', 'CANCELLED', 'FAILED'].includes(status)) {
-                setPaymentStatus('failed');
-                setError(`Payment ${status.toLowerCase()}`);
-                onError(`Payment ${status.toLowerCase()}`);
-                clearInterval(statusCheckInterval);
+              
+              // Handle different status formats for links vs orders
+              let status;
+              if (orderData.isOneClickCheckout || orderData.checkoutType === 'oneclick') {
+                status = result.data?.linkStatus;
+                // Check for successful payment link statuses
+                if (status === 'PAID' || status === 'PARTIALLY_PAID') {
+                  setPaymentStatus('success');
+                  onSuccess();
+                  clearInterval(statusCheckInterval);
+                } else if (['EXPIRED', 'CANCELLED', 'FAILED', 'INACTIVE'].includes(status)) {
+                  setPaymentStatus('failed');
+                  setError(`Payment ${status.toLowerCase()}`);
+                  onError(`Payment ${status.toLowerCase()}`);
+                  clearInterval(statusCheckInterval);
+                }
+              } else {
+                status = result.data?.orderStatus;
+                if (status === 'PAID') {
+                  setPaymentStatus('success');
+                  onSuccess();
+                  clearInterval(statusCheckInterval);
+                } else if (['EXPIRED', 'CANCELLED', 'FAILED'].includes(status)) {
+                  setPaymentStatus('failed');
+                  setError(`Payment ${status.toLowerCase()}`);
+                  onError(`Payment ${status.toLowerCase()}`);
+                  clearInterval(statusCheckInterval);
+                }
               }
             } else {
               console.warn('Received non-JSON response from payment status API');
@@ -80,7 +105,7 @@ const CashfreePaymentForm: React.FC<CashfreePaymentFormProps> = ({
         clearInterval(statusCheckInterval);
       }
     };
-  }, [processing, orderData.orderId, onSuccess, onError]);
+  }, [processing, orderData, onSuccess, onError]);
 
   const handleCashfreePayment = () => {
     setProcessing(true);
@@ -88,7 +113,8 @@ const CashfreePaymentForm: React.FC<CashfreePaymentFormProps> = ({
     setPaymentStatus('processing');
 
     try {
-      console.log('🔄 Redirecting to Cashfree payment page...');
+      const checkoutType = orderData.isOneClickCheckout || orderData.checkoutType === 'oneclick' ? 'One-Click Checkout' : 'Standard Checkout';
+      console.log(`🔄 Redirecting to Cashfree ${checkoutType} payment page...`);
       
       // Open Cashfree payment link in a new window
       const paymentWindow = window.open(
@@ -151,17 +177,25 @@ const CashfreePaymentForm: React.FC<CashfreePaymentFormProps> = ({
     return `₹${rupees.toFixed(2)}`;
   };
 
+  const checkoutType = orderData.isOneClickCheckout || orderData.checkoutType === 'oneclick' ? 'oneclick' : 'standard';
+  const paymentId = orderData.linkId || orderData.orderId;
+
   return (
     <div className="cli-terminal border border-cli-gray rounded-lg p-6 bg-cli-darker">
       <div className="mb-6">
         <h3 className="font-mono text-xl font-bold text-primary-500 mb-2">
-          ./cashfree-payment --secure
+          ./cashfree-payment --{checkoutType} --secure
         </h3>
         <div className="font-mono text-sm text-cli-light-gray space-y-1">
           <div>Package: {packageInfo.name}</div>
           <div>Credits: {packageInfo.credits}</div>
           <div>Amount: {formatAmount(packageInfo.price)}</div>
-          <div className="text-xs text-cli-gray">Order ID: {orderData.orderId}</div>
+          <div className="text-xs text-cli-gray">
+            {checkoutType === 'oneclick' ? 'Link ID' : 'Order ID'}: {paymentId}
+          </div>
+          <div className="text-xs text-cli-gray">
+            Checkout: {checkoutType === 'oneclick' ? 'One-Click Direct Link' : 'Standard Hosted Page'}
+          </div>
         </div>
       </div>
 
@@ -174,6 +208,9 @@ const CashfreePaymentForm: React.FC<CashfreePaymentFormProps> = ({
       {paymentStatus === 'processing' && (
         <div className="cli-info font-mono text-sm p-3 rounded border border-blue-500 bg-blue-900/20 text-blue-400 mb-4">
           🔄 Payment in progress... Please complete the payment in the opened window.
+          <div className="text-xs mt-1">
+            Using {checkoutType === 'oneclick' ? 'One-Click Checkout' : 'Standard Checkout'} flow
+          </div>
         </div>
       )}
 
@@ -197,6 +234,20 @@ const CashfreePaymentForm: React.FC<CashfreePaymentFormProps> = ({
             <div>🔄 EMI Options</div>
           </div>
         </div>
+        
+        {checkoutType === 'oneclick' && (
+          <div className="p-4 rounded border border-primary-500 bg-primary-900/20">
+            <h4 className="font-mono text-sm font-medium text-primary-400 mb-2">
+              ⚡ One-Click Checkout Enabled
+            </h4>
+            <div className="text-xs font-mono text-cli-light-gray space-y-1">
+              <div>✅ Direct payment link - no redirects</div>
+              <div>✅ Faster checkout experience</div>
+              <div>✅ Mobile optimized interface</div>
+              <div>⏰ Link expires in 24 hours</div>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="space-y-3">
@@ -211,7 +262,9 @@ const CashfreePaymentForm: React.FC<CashfreePaymentFormProps> = ({
             ? '✅ Payment Completed'
             : processing 
               ? './processing-payment...' 
-              : './pay-with-cashfree --secure'
+              : checkoutType === 'oneclick'
+                ? './pay-with-cashfree --oneclick --secure'
+                : './pay-with-cashfree --secure'
           }
         </CliButton>
 
