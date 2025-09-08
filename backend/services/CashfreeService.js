@@ -100,12 +100,19 @@ class CashfreeService {
       if (sessionId) {
         // Use the Cashfree hosted checkout page URL
         const isTestMode = this.baseURL.includes('sandbox');
-        paymentLink = isTestMode 
-          ? `https://payments-test.cashfree.com/pay/order` 
-          : `https://payments.cashfree.com/pay/order`;
         
-        // Add payment session ID as query parameter
-        paymentLink += `?order_token=${sessionId}`;
+        // Updated URLs based on Cashfree documentation
+        if (isTestMode) {
+          paymentLink = `https://payments-test.cashfree.com/pay/order?order_token=${sessionId}`;
+        } else {
+          paymentLink = `https://payments.cashfree.com/pay/order?order_token=${sessionId}`;
+        }
+        
+        logger.info('Generated payment link', {
+          isTestMode,
+          sessionId: sessionId.substring(0, 20) + '...',
+          paymentLink: paymentLink.substring(0, 50) + '...'
+        });
       }
       
       return {
