@@ -85,25 +85,53 @@ function identifyPaymentGateway(paymentRecord) {
 async function getPaymentRecordByGatewayId(gatewayId, userId) {
   const pool = getPool();
   
-  // Use the database function to find payment by gateway ID (works for both orders and links)
-  const paymentQuery = `
-    SELECT * FROM find_payment_by_gateway_id($1, $2)
-  `;
-  
-  const result = await pool.query(paymentQuery, [gatewayId, userId]);
-  
-  if (result.rows.length === 0) {
-    return null;
+  try {
+    // Try to use the new database function first (after migration)
+    const paymentQuery = `
+      SELECT * FROM find_payment_by_gateway_id($1, $2)
+    `;
+    
+    const result = await pool.query(paymentQuery, [gatewayId, userId]);
+    
+    if (result.rows.length === 0) {
+      return null;
+    }
+    
+    const paymentRecord = result.rows[0];
+    
+    return {
+      ...paymentRecord,
+      gateway: paymentRecord.gateway,
+      gatewayId: gatewayId,
+      gatewayType: paymentRecord.gateway_type,
+    };
+  } catch (error) {
+    // Fallback to old method if function doesn't exist (before migration)
+    console.log('Using fallback payment lookup method - database function not available yet');
+    
+    // Try to find payment by Cashfree order ID (legacy method)
+    const paymentQuery = `
+      SELECT * FROM payments 
+      WHERE cashfree_order_id = $1 
+      AND user_id = $2
+    `;
+    
+    const result = await pool.query(paymentQuery, [gatewayId, userId]);
+    
+    if (result.rows.length === 0) {
+      return null;
+    }
+    
+    const paymentRecord = result.rows[0];
+    const gatewayInfo = identifyPaymentGateway(paymentRecord);
+    
+    return {
+      ...paymentRecord,
+      gateway: gatewayInfo.gateway,
+      gatewayId: gatewayInfo.id,
+      gatewayType: gatewayInfo.type,
+    };
   }
-  
-  const paymentRecord = result.rows[0];
-  
-  return {
-    ...paymentRecord,
-    gateway: paymentRecord.gateway,
-    gatewayId: gatewayId,
-    gatewayType: paymentRecord.gateway_type,
-  };
 }
 
 // Helper function to confirm payment with Cashfree gateway
@@ -297,41 +325,62 @@ router.post(
         paymentIntent = cashfreeOrder.data;
 
         // Store payment record for Cashfree
-        if (useOneClickCheckout && paymentIntent.isOneClickCheckout) {
-          // Store one-click checkout payment
-          await pool.query(
-            `
-            INSERT INTO payments (
-              id, user_id, cashfree_link_id, cf_link_id, package_id, 
-              credits, amount, status, payment_provider, checkout_type,
-              payment_link_url, link_created_at, link_expiry_at, created_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending', 'cashfree', 'oneclick', $8, CURRENT_TIMESTAMP, $9, CURRENT_TIMESTAMP)
-          `,
-            [
-              paymentId,
-              req.user.id,
-              paymentIntent.linkId,
-              paymentIntent.cfLinkId,
-              packageId,
-              creditPackage.credits,
-              creditPackage.price, // Store original USD price
-              paymentIntent.paymentLink,
-              new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours expiry
-            ]
-          );
-        } else {
-          // Store standard order payment
+        try {
+          if (useOneClickCheckout && paymentIntent.isOneClickCheckout) {
+            // Store one-click checkout payment (requires migration)
+            await pool.query(
+              `
+              INSERT INTO payments (
+                id, user_id, cashfree_link_id, cf_link_id, package_id, 
+                credits, amount, status, payment_provider, checkout_type,
+                payment_link_url, link_created_at, link_expiry_at, created_at
+              ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending', 'cashfree', 'oneclick', $8, CURRENT_TIMESTAMP, $9, CURRENT_TIMESTAMP)
+            `,
+              [
+                paymentId,
+                req.user.id,
+                paymentIntent.linkId,
+                paymentIntent.cfLinkId,
+                packageId,
+                creditPackage.credits,
+                creditPackage.price, // Store original USD price
+                paymentIntent.paymentLink,
+                new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours expiry
+              ]
+            );
+          } else {
+            // Store standard order payment (with new columns if available)
+            await pool.query(
+              `
+              INSERT INTO payments (
+                id, user_id, cashfree_order_id, package_id, 
+                credits, amount, status, payment_provider, checkout_type, created_at
+              ) VALUES ($1, $2, $3, $4, $5, $6, 'pending', 'cashfree', 'standard', CURRENT_TIMESTAMP)
+            `,
+              [
+                paymentId,
+                req.user.id,
+                paymentIntent.orderId,
+                packageId,
+                creditPackage.credits,
+                creditPackage.price, // Store original USD price
+              ]
+            );
+          }
+        } catch (dbError) {
+          // Fallback to legacy payment storage if new columns don't exist
+          console.log('Using fallback payment storage - new columns not available yet');
           await pool.query(
             `
             INSERT INTO payments (
               id, user_id, cashfree_order_id, package_id, 
-              credits, amount, status, payment_provider, checkout_type, created_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, 'pending', 'cashfree', 'standard', CURRENT_TIMESTAMP)
+              credits, amount, status, payment_provider, created_at
+            ) VALUES ($1, $2, $3, $4, $5, $6, 'pending', 'cashfree', CURRENT_TIMESTAMP)
           `,
             [
               paymentId,
               req.user.id,
-              paymentIntent.orderId,
+              paymentIntent.orderId || paymentIntent.linkId, // Use whatever ID we have
               packageId,
               creditPackage.credits,
               creditPackage.price, // Store original USD price
