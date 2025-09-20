@@ -310,20 +310,81 @@ router.post(
   }
 );
 
-// Add explicit CORS handling for upload endpoint
-router.use('/versions/upload*', (req, res, next) => {
-  // Set comprehensive CORS headers for upload endpoints
-  res.header('Access-Control-Allow-Origin', req.headers.origin || 'https://mock-mate.com');
+// Add explicit CORS handling for ALL app management endpoints
+router.use((req, res, next) => {
+  // Set comprehensive CORS headers for all endpoints
+  const origin = req.headers.origin;
+  const allowedOrigins = ['https://mock-mate.com', 'https://www.mock-mate.com', 'http://localhost:3000', 'http://localhost:3001'];
+  
+  if (!origin || allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin || 'https://mock-mate.com');
+  }
+  
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, X-File-Name, Cache-Control');
   res.header('Access-Control-Allow-Credentials', 'true');
   res.header('Access-Control-Max-Age', '86400');
   
+  console.log(`🔍 CORS Request - ${req.method} ${req.path} from origin: ${origin || 'none'}`);
+  
   if (req.method === 'OPTIONS') {
-    console.log(`OPTIONS request for upload endpoint: ${req.path}`);
+    console.log(`✅ OPTIONS request handled for: ${req.path}`);
     return res.status(200).end();
   }
   next();
+});
+
+// Test endpoint for CORS and upload debugging
+router.get('/test-cors-upload', (req, res) => {
+  res.json({
+    success: true,
+    message: 'CORS test successful',
+    origin: req.headers.origin || 'No origin',
+    timestamp: new Date().toISOString(),
+    serverLimits: {
+      maxFileSize: '2GB',
+      maxFieldSize: '50MB'
+    },
+    corsHeaders: {
+      'Access-Control-Allow-Origin': res.get('Access-Control-Allow-Origin'),
+      'Access-Control-Allow-Methods': res.get('Access-Control-Allow-Methods'),
+      'Access-Control-Allow-Headers': res.get('Access-Control-Allow-Headers')
+    }
+  });
+});
+
+// Test small upload endpoint (no auth required for testing)
+router.post('/test-upload-small', upload.single('testFile'), (req, res) => {
+  console.log('📤 Test upload request received:', {
+    origin: req.headers.origin,
+    contentType: req.headers['content-type'],
+    contentLength: req.headers['content-length'],
+    hasFile: !!req.file,
+    fileName: req.file?.originalname,
+    fileSize: req.file?.size
+  });
+  
+  if (!req.file) {
+    return res.status(400).json({
+      success: false,
+      message: 'No file uploaded'
+    });
+  }
+  
+  res.json({
+    success: true,
+    message: 'Test upload successful',
+    file: {
+      name: req.file.originalname,
+      size: req.file.size,
+      type: req.file.mimetype,
+      sizeFormatted: `${(req.file.size / 1024 / 1024).toFixed(2)}MB`
+    },
+    corsHeaders: {
+      'Access-Control-Allow-Origin': res.get('Access-Control-Allow-Origin')
+    },
+    timestamp: new Date().toISOString()
+  });
 });
 
 // Original upload endpoint
