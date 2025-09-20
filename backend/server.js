@@ -241,9 +241,9 @@ app.use('/api/', limiter);
 // Logging
 app.use(morgan('combined', { stream: { write: message => logger.info(message.trim()) } }));
 
-// Body parsing middleware  
-app.use(express.json({ limit: '500mb' }));
-app.use(express.urlencoded({ extended: true, limit: '500mb' }));
+// Body parsing middleware with increased limits for file uploads
+app.use(express.json({ limit: '2gb' }));
+app.use(express.urlencoded({ extended: true, limit: '2gb', parameterLimit: 100000 }));
 
 // Static files for uploaded resumes
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

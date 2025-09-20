@@ -60,7 +60,12 @@ const upload = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 500 * 1024 * 1024, // 500MB limit
+    fileSize: 2 * 1024 * 1024 * 1024, // 2GB limit
+    fieldSize: 50 * 1024 * 1024, // 50MB field size
+  },
+  onError: (err, next) => {
+    console.error('Multer upload error:', err);
+    next(err);
   },
 });
 
@@ -305,6 +310,22 @@ router.post(
   }
 );
 
+// Add explicit CORS handling for upload endpoint
+router.use('/versions/upload*', (req, res, next) => {
+  // Set comprehensive CORS headers for upload endpoints
+  res.header('Access-Control-Allow-Origin', req.headers.origin || 'https://mock-mate.com');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, X-File-Name, Cache-Control');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Max-Age', '86400');
+  
+  if (req.method === 'OPTIONS') {
+    console.log(`OPTIONS request for upload endpoint: ${req.path}`);
+    return res.status(200).end();
+  }
+  next();
+});
+
 // Original upload endpoint
 router.post(
   '/versions/upload',
@@ -323,10 +344,49 @@ router.post(
     body('isBeta').optional().isBoolean().withMessage('Is beta must be a boolean'),
     body('isFeatured').optional().isBoolean().withMessage('Is featured must be a boolean'),
   ],
+  (err, req, res, next) => {
+    // Handle multer errors specifically
+    if (err) {
+      console.error('Upload middleware error:', err);
+      
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(413).json({
+          success: false,
+          message: 'File too large. Maximum size allowed is 2GB.',
+          error: 'FILE_TOO_LARGE',
+          maxSize: '2GB'
+        });
+      }
+      
+      if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+        return res.status(400).json({
+          success: false,
+          message: 'Unexpected file field. Expected field name: appFile',
+          error: 'UNEXPECTED_FILE_FIELD'
+        });
+      }
+      
+      return res.status(400).json({
+        success: false,
+        message: 'File upload error: ' + err.message,
+        error: err.code || 'UPLOAD_ERROR'
+      });
+    }
+    next();
+  },
   async (req, res) => {
     try {
+      console.log('Upload endpoint called:', {
+        origin: req.headers.origin,
+        method: req.method,
+        contentType: req.headers['content-type'],
+        contentLength: req.headers['content-length'],
+        hasFile: !!req.file
+      });
+      
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
+        console.log('Validation errors:', errors.array());
         return res.status(400).json({
           success: false,
           errors: errors.array(),
