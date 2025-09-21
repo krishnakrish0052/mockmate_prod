@@ -11,9 +11,14 @@ const initializeDatabase = async () => {
       port: parseInt(process.env.DB_PORT) || 5432,
       database: process.env.DB_NAME || 'mockmate_db',
       user: process.env.DB_USER || 'mockmate_user',
-      max: 20,
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 2000,
+      max: 20, // Maximum number of clients in the pool
+      idleTimeoutMillis: 300000, // 5 minutes - keep connections alive longer
+      connectionTimeoutMillis: 10000, // 10 seconds - more time to establish connection
+      keepAlive: true,
+      keepAliveInitialDelayMillis: 10000, // Enable TCP keep-alive
+      query_timeout: 30000, // 30 seconds query timeout
+      statement_timeout: 30000, // 30 seconds statement timeout
+      allowExitOnIdle: false, // Don't exit on idle connections
     };
 
     // Only add password if it exists and is not empty
@@ -23,12 +28,50 @@ const initializeDatabase = async () => {
 
     pool = new Pool(dbConfig);
 
-    // Test the connection
-    const client = await pool.connect();
-    await client.query('SELECT NOW()');
-    client.release();
+    // Add error handling for the pool
+    pool.on('error', (err, client) => {
+      logger.error('Database pool error:', {
+        error: err.message,
+        stack: err.stack,
+        clientProcessId: client?.processID || 'unknown'
+      });
+    });
 
-    logger.info('Database connection pool initialized successfully');
+    pool.on('connect', (client) => {
+      logger.debug('Database client connected:', { processId: client.processID });
+    });
+
+    pool.on('remove', (client) => {
+      logger.debug('Database client removed:', { processId: client.processID });
+    });
+
+    // Test the connection with retry logic
+    let retryCount = 0;
+    const maxRetries = 3;
+    
+    while (retryCount < maxRetries) {
+      try {
+        const client = await pool.connect();
+        await client.query('SELECT NOW() as current_time');
+        client.release();
+        logger.info('Database connection pool initialized successfully');
+        break;
+      } catch (error) {
+        retryCount++;
+        logger.warn(`Database connection attempt ${retryCount} failed:`, {
+          error: error.message,
+          retryCount,
+          maxRetries
+        });
+        
+        if (retryCount === maxRetries) {
+          throw error;
+        }
+        
+        // Wait before retrying (exponential backoff)
+        await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 1000));
+      }
+    }
 
     // Extend database with helper methods
     extendDatabase();

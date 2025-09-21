@@ -9,27 +9,38 @@ const initializeRedis = async () => {
       socket: {
         host: process.env.REDIS_HOST || 'localhost',
         port: process.env.REDIS_PORT || 6379,
+        connectTimeout: 20000, // 20 seconds
+        lazyConnect: true,
+        keepAlive: 30000, // 30 seconds
+        reconnectStrategy: (retries) => {
+          if (retries > 20) {
+            logger.error('Redis reconnection attempts exhausted');
+            return false; // Stop retrying
+          }
+          const delay = Math.min(retries * 100, 5000);
+          logger.info(`Redis reconnecting in ${delay}ms (attempt ${retries})`);
+          return delay;
+        },
       },
       username: process.env.REDIS_USERNAME || undefined,
       password: process.env.REDIS_PASSWORD || undefined,
-      retry_strategy: options => {
-        if (options.error && options.error.code === 'ECONNREFUSED') {
-          logger.error('Redis connection refused');
-          return new Error('Redis connection refused');
-        }
-        if (options.total_retry_time > 1000 * 60 * 60) {
-          logger.error('Redis retry time exhausted');
-          return new Error('Retry time exhausted');
-        }
-        if (options.attempt > 10) {
-          return undefined;
-        }
-        return Math.min(options.attempt * 100, 3000);
-      },
+      // Connection options for better stability
+      commandsQueueMaxLength: 1000,
+      enableOfflineQueue: true,
+      disableOfflineQueue: false,
+      retryDelayOnClusterDown: 1000,
+      retryDelayOnFailover: 1000,
+      maxRetriesPerRequest: 3,
     });
 
     client.on('error', err => {
-      logger.error('Redis Client Error:', err);
+      logger.error('Redis Client Error:', {
+        error: err.message,
+        stack: err.stack,
+        code: err.code,
+        syscall: err.syscall,
+        errno: err.errno
+      });
     });
 
     client.on('connect', () => {
@@ -42,6 +53,14 @@ const initializeRedis = async () => {
 
     client.on('ready', () => {
       logger.info('Redis ready for operations');
+    });
+
+    client.on('end', () => {
+      logger.warn('Redis connection ended');
+    });
+
+    client.on('disconnect', () => {
+      logger.warn('Redis disconnected');
     });
 
     await client.connect();
